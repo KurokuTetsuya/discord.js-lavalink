@@ -19,7 +19,7 @@
 		"sourceMap": true,
 		"strictBindCallApply": true,
         "target": "esnext",
-        "types": ["discord.js"]
+        "types": ["node", "discord.js"]
 	},
 	"exclude": [
 		"node_modules",

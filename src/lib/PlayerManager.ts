@@ -1,6 +1,6 @@
 import { Client, Collection } from "discord.js";
 import { Player } from "./Player";
-import { LavalinkNode } from "./LavalinkNode";
+import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { PlayerManagerOptions, PlayerManagerNodes, NodeOptions, LavalinkWebSocketMessage, PlayerManagerJoinData, PlayerManagerJoinOptions, VoiceServerUpdateData } from "./Types";
 
 export class PlayerManager extends Collection<string, Player> {
@@ -10,7 +10,7 @@ export class PlayerManager extends Collection<string, Player> {
     public shards: number;
     private Player: any; // tslint:disable-line: variable-name
 
-    public constructor(client: Client, nodes: PlayerManagerNodes[], options: PlayerManagerOptions) {
+    public constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions) {
         super();
 
         if (!client) throw new Error("INVALID_CLIENT: No client provided.");
@@ -27,7 +27,7 @@ export class PlayerManager extends Collection<string, Player> {
         });
     }
 
-    private createNode(options: NodeOptions): LavalinkNode {
+    private createNode(options: LavalinkNodeOptions): LavalinkNode {
         const node = new LavalinkNode(this, options);
 
         node.on("error", error => this.client.emit("error", error));

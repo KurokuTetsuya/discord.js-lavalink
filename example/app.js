@@ -14,7 +14,7 @@ class MusicClient extends Client {
         this.on("ready", () => {
             this.player = new PlayerManager(client, config.nodes, {
                 user: client.user.id,
-                shards: 0
+                shards: 1
             });
 
             console.log("Bot is online!");
@@ -35,13 +35,16 @@ client.on("message", async msg => {
 
         const track = args.join(" ");
         const [song] = await getSongs(`ytsearch: ${track}`);
+        console.log(song);
         if (!song) return msg.reply("No songs found. try again!");
 
-        const player = await client.player.join({
+        const player = client.player.join({
             guild: msg.guild.id,
             channel: msg.member.voice.channel.id,
             host: client.player.nodes.first().host
         }, { selfdeaf: true });
+
+        console.log(player);
 
         if (!player) return msg.reply("Could not join");
 

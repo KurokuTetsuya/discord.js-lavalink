@@ -2,7 +2,8 @@
   "name": "discord.js-lavalink",
   "version": "3.0.0",
   "description": "A discord.js lavalink client",
-  "main": "dist/src/index",
+  "main": "dist/index",
+  "types": "dist/index.d.ts",
   "scripts": {
     "prepublishOnly": "yarn compile",
     "lint": "tslint --fix 'src/**/*.ts'",
@@ -33,7 +34,7 @@
   },
   "homepage": "https://github.com/MrJacz/discord.js-lavalink#readme",
   "devDependencies": {
-    "@types/node": "^11.11.3",
+    "@types/node": "^11.11.4",
     "@types/ws": "^6.0.1",
     "discord.js": "discordjs/discord.js",
     "docma": "^3.2.2",
