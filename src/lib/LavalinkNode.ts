@@ -1,156 +1,131 @@
-
 import * as WebSocket from "ws";
 import { EventEmitter } from "events";
 import { PlayerManager } from "./PlayerManager";
-import { NodeStats, NodeOptions } from "./Types";
+
+export type LavalinkNodeOptions = {
+    host: string;
+    port: number | string;
+    password?: string;
+    reconnectInterval?: number;
+};
+
+export type LavalinkNodeStats = {
+    players: number;
+    playingPlayers: number;
+    uptime: number;
+    memory: {
+        free: number;
+        used: number;
+        allocated: number;
+        reservable: number;
+    };
+    cpu: {
+        cores: number;
+        systemLoad: number;
+        lavalinkLoad: number;
+    };
+    frameStats?: {
+        sent?: number;
+        nulled?: number;
+        deficit?: number;
+    }
+};
 
 export class LavalinkNode extends EventEmitter {
+    public options: LavalinkNodeOptions;
     public manager: PlayerManager;
-    public host: string;
-    public port?: number | string;
-    public address: string;
-    public region?: string;
-    public password?: string;
-    public ready: boolean;
-    public ws?: WebSocket;
-    public reconnect?: NodeJS.Timer;
-    public reconnectInterval?: number;
-    public stats: NodeStats;
+    public ws!: WebSocket;
+    private reconnect?: NodeJS.Timeout;
+    public stats?: LavalinkNodeStats;
+    public resumeKey?: string;
 
-    public constructor(manager: PlayerManager, options: NodeOptions) {
+    public constructor(manager: PlayerManager, options: LavalinkNodeOptions) {
         super();
 
-        /**
-         * The PlayerManager that created the Node
-         * @type {PlayerManager}
-         * @private
-         */
-        Object.defineProperty(this, "manager", { value: manager });
-        /**
-         * Host
-         * @type {string}
-         * @private
-         */
-        Object.defineProperty(this, "host", { value: options.host });
-        /**
-         * Port
-         * @type {number|string}
-         * @private
-         */
-        Object.defineProperty(this, "port", { value: options.port || 2333 });
-        /**
-         * Address
-         * @type {string}
-         * @private
-         */
-        Object.defineProperty(this, "address", { value: options.address || `ws://${options.host}:${options.port}` });
-        /**
-         * Region
-         * @type {?string}
-         */
-        this.region = options.region || null;
-        /**
-         * Lavalink Node(Shard) Password
-         * @type {string}
-         * @private
-         */
-        Object.defineProperty(this, "password", { value: options.password || "youshallnotpass" });
-        /**
-         * If the lavalink websocket is ready or not
-         * @type {boolean}
-         */
-        this.ready = false;
-        /**
-         * The WebSocket
-         * @type {?WebSocket}
-         */
+        this.manager = manager;
+        this.options = options;
+
         this.ws = null;
-        /**
-         * Roconnection interval
-         * @type {?NodeJS.Timer}
-         */
-        this.reconnect = null;
-        /**
-         * The interval to use for auto Reconnecting
-         * @type {number}
-         */
-        this.reconnectInterval = options.reconnectInterval || 15000;
-        /**
-         * Player stats
-         * @type {Object}
-         */
         this.stats = {
             players: 0,
-            playingPlayers: 0
+            playingPlayers: 0,
+            uptime: 0,
+            memory: {
+                free: 0,
+                used: 0,
+                allocated: 0,
+                reservable: 0,
+            },
+            cpu: {
+                cores: 0,
+                systemLoad: 0,
+                lavalinkLoad: 0,
+            }
         };
 
-        this._connect();
+        this.connect();
     }
 
-    /**
-     * Connects to the WebSocket server
-     */
-    private _connect() {
-        this.ws = new WebSocket(this.address, {
-            headers: {
-                "User-Id": this.manager.user,
-                "Num-Shards": String(this.manager.shards),
-                Authorization: this.password
-            }
+    private connect(): void {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
+
+        const headers = {
+            Authorization: this.password,
+            "Num-Shards": String(this.manager.shards),
+            "User-Id": this.manager.user
+        };
+
+        if (this.resumeKey) headers["Resume-Key"] = this.resumeKey;
+
+        this.ws = new WebSocket(this.address, { headers });
+
+        this.ws
+            .on("open", () => this.emit("ready"))
+            .on("close", (code: number, reason: string) => {
+                this.emit("disconnect", code, reason);
+                if (code !== 1000 || reason !== "destroy") return this._reconnect();
+            }).on("error", (error: Error) => {
+                this.emit("error", error);
+                this._reconnect();
+            })
+            .on("message", (data: WebSocket.Data) => {
+                let d: Buffer | string;
+
+                if (Buffer.isBuffer(data)) d = data;
+                else if (Array.isArray(data)) d = Buffer.concat(data);
+                else if (data instanceof ArrayBuffer) d = Buffer.from(data);
+                else d = data;
+
+                const msg = JSON.parse(d.toString());
+
+                if (msg.op && msg.op === "stats") this.stats = msg;
+                delete (this.stats as any).op;
+
+                if (msg.guildId && this.manager.has(msg.guildId)) this.manager.get(msg.guildId).emit(msg.op, msg);
+
+                this.emit("raw", msg);
+            });
+    }
+
+    public send(msg: object): Promise<boolean> {
+        return new Promise((res, rej) => {
+            const parsed = JSON.stringify(msg);
+
+            if (!this.OPEN) return res(false);
+            this.ws.send(parsed, (error: Error) => {
+                if (error) rej(error);
+                else res(true);
+            });
         });
-
-        this.ws.on("message", this._message.bind(this));
-        this.ws.on("open", this._ready.bind(this));
-        this.ws.on("close", this._close.bind(this));
-        this.ws.on("error", this._error.bind(this));
     }
 
-    /**
-     * Function for the onOpen WS event
-     * @private
-     */
-    private _ready() {
-        this.ready = true;
-        /**
-		 * Emmited when the node gets ready
-		 * @event LavalinkNode#ready
-		 */
-        this.emit("ready");
-    }
-
-    /**
-     * Sends data to the Lavalink Node
-     * @param {Object} data Object to send
-     * @returns {boolean}
-     */
-    public send(data: object): boolean {
-        if (!this.ws) return false;
-        let payload;
-        try {
-            payload = JSON.stringify(data);
-        } catch (error) {
-            this.emit("error", error);
-            return false;
-        }
-        this.ws.send(payload);
-        return true;
-    }
-
-    /**
-     * Destroys the WebSocket
-     * @returns {boolean}
-     */
     public destroy(): boolean {
-        if (!this.ws) return false;
+        if (!this.OPEN) return false;
         this.ws.close(1000, "destroy");
         this.ws = null;
         return true;
     }
 
-    /**
-     * Reconnects the websocket
-     * @private
-     */
     private _reconnect() {
         this.reconnect = setTimeout(() => {
             this.ws.removeAllListeners();
@@ -159,62 +134,32 @@ export class LavalinkNode extends EventEmitter {
 			 * @event LavalinkNode#reconnecting
 			 */
             this.emit("reconnecting");
-            this._connect();
+            this.connect();
         }, this.reconnectInterval);
     }
 
-    /**
-     * Function for the onClose event
-     * @param {number} code WebSocket closing code (idk tbh)
-     * @param {?string} reason reason
-     * @returns {void}
-     * @private
-     */
-    private _close(code, reason) {
-        this.ready = false;
-        if (code !== 1000 || reason !== "destroy") return this._reconnect();
-        this.ws = null;
-        /**
-		 * Emmited when the node disconnects from the WebSocket and won't attempt to reconnect
-		 * @event LavalinkNode#disconnect
-		 * @param {string} reason The reason for the disconnect
-		 */
-        this.emit("disconnect", reason);
+    public get host(): string {
+        return this.options.host;
     }
 
-    /**
-     * Function for the onMessage event
-     * @param {Object} msg Message object
-     * @returns {void}
-     * @private
-     */
-    private _message(msg) {
-        try {
-            const data = JSON.parse(msg);
-            if (data.op === "stats") this.stats = data;
-            /**
-		     * Emmited when a message is received and parsed
-		     * @event LavalinkNode#message
-		     * @param {Object} data The raw message data
-		     */
-            this.emit("message", data);
-        } catch (error) {
-            this.emit("error", error);
-        }
+    public get port(): string | number {
+        return this.options.port || 2333;
     }
 
-    /**
-     * Function for onError event
-     * @param {Error} error error from WS
-     * @private
-     */
-    private _error(error) {
-        /**
-         * Emitted whenever the Node's WebSocket encounters a connection error.
-         * @event LavalinkNode#error
-         * @param {Error} error The encountered error
-         */
-        this.emit("error", error);
+    public get password(): string {
+        return this.options.password || "youshallnotpass";
     }
 
+    public get reconnectInterval(): number {
+        return this.options.reconnectInterval || 5000;
+    }
+
+    public get OPEN(): boolean {
+        return this.ws.readyState === WebSocket.OPEN;
+    }
+
+    private get address(): string {
+        const { host, port } = this.options;
+        return `ws://${host}:${port}`;
+    }
 }
