@@ -53,14 +53,20 @@ export class Player extends EventEmitter {
                     if (this.listenerCount("end")) this.emit("end", data);
                 }
                 case "TrackExceptionEvent": {
-                    if (this.listenerCount("error")) return this.emit("error", data);
+                    if (this.listenerCount("error")) this.emit("error", data);
                 }
                 case "TrackStuckEvent": {
                     this.stop();
                     if (this.listenerCount("end")) this.emit("end", data);
                 }
-                default: return this.emit("warn", `Unexpected event type: ${data.type}`);
+                case "WebSocketClosedEvent": {
+                    if (this.listenerCount("error")) this.emit("error", data);
+                }
+                default: if (this.listenerCount("warn")) this.emit("warn", `Unexpected event type: ${data.type}`);
             }
+        })
+        .on("playerUpdate", data => {
+            this.state = { ...data, ...this.state };
         });
     }
 
@@ -111,7 +117,7 @@ export class Player extends EventEmitter {
 
     public connect(data) {
         return this.send("voiceUpdate", {
-            sessionId: data.sessionId,
+            sessionId: data.session,
             event: data.event
         });
     }
