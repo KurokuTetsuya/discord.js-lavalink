@@ -4,7 +4,7 @@ import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { PlayerManagerOptions, PlayerManagerNodes, NodeOptions, LavalinkWebSocketMessage, PlayerManagerJoinData, PlayerManagerJoinOptions, VoiceServerUpdateData } from "./Types";
 
 export class PlayerManager extends Collection<string, Player> {
-    private client: Client;
+    public client: Client;
     public nodes = new Collection<string, LavalinkNode>();
     public user: string;
     public shards: number;
@@ -23,7 +23,10 @@ export class PlayerManager extends Collection<string, Player> {
         for (const node of nodes) this.createNode(node);
 
         client.on("raw", message => {
-            if (message.t === "VOICE_SERVER_UPDATE") this.voiceServerUpdate(message.d);
+            switch (message.t) {
+                case "VOICE_SERVER_UPDATE": return this.voiceServerUpdate(message.d);
+                case "VOICE_STATE_UPDATE": return this.voiceStateUpdate(message.d);
+            }
         });
     }
 
@@ -43,24 +46,6 @@ export class PlayerManager extends Collection<string, Player> {
         if (!node) return false;
         node.removeAllListeners();
         return this.nodes.delete(node.host);
-    }
-
-    private onMessage(message: LavalinkWebSocketMessage): any {
-        if (!message || !message.op) return;
-
-        switch (message.op) {
-            case "playerUpdate": {
-                const player = this.get(message.guildId);
-                if (!player) return;
-                player.state = Object.assign(player.state, message.state);
-                return;
-            }
-            case "event": {
-                const player = this.get(message.guildId);
-                if (!player) return;
-                return player.event(message);
-            }
-        }
     }
 
     public join(data: PlayerManagerJoinData, options?: PlayerManagerJoinOptions): Player {

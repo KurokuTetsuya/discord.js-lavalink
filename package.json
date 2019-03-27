@@ -7,7 +7,7 @@
   "scripts": {
     "prepublishOnly": "yarn compile",
     "lint": "tslint --fix 'src/**/*.ts'",
-    "test:lint": "tslint 'src/**/*.ts'",
+    "test": "tslint 'src/**/*.ts'",
     "compile": "tsc -p .",
     "watch": "tsc -p . -w",
     "docs": "node docs.js"
@@ -34,16 +34,16 @@
   },
   "homepage": "https://github.com/MrJacz/discord.js-lavalink#readme",
   "devDependencies": {
-    "@types/node": "^11.11.4",
+    "@types/node": "^11.11.7",
     "@types/ws": "^6.0.1",
     "discord.js": "discordjs/discord.js",
     "docma": "^3.2.2",
-    "eslint": "^5.15.2",
+    "eslint": "^5.15.3",
     "eslint-plugin-node": "^8.0.1",
     "eslint-plugin-promise": "^4.0.1",
     "jsdoc-dynamic": "^1.0.4",
     "tslint": "^5.14.0",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.3.4000"
   },
   "dependencies": {
     "ws": "^6.2.0"
