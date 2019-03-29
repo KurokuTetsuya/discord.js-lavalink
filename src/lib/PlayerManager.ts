@@ -1,14 +1,44 @@
 import { Client, Collection } from "discord.js";
 import { Player } from "./Player";
 import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
-import { PlayerManagerOptions, PlayerManagerNodes, NodeOptions, LavalinkWebSocketMessage, PlayerManagerJoinData, PlayerManagerJoinOptions, VoiceServerUpdateData } from "./Types";
+import { EventEmitter } from "events";
 
-export class PlayerManager extends Collection<string, Player> {
+export type PlayerManagerOptions = {
+    user: string;
+    shards: number;
+    Player?: Player;
+};
+
+export type PlayerManagerNodes = {
+    host: string;
+    port?: number | string;
+    password?: string;
+};
+
+export type PlayerManagerJoinData = {
+    guild: string;
+    channel: string;
+    host: string;
+};
+
+export type PlayerManagerJoinOptions = {
+    selfmute?: boolean,
+    selfdeaf?: boolean
+};
+
+export type VoiceServerUpdateData = {
+    token: string;
+    guild_id: string;
+    endpoint: string;
+};
+
+export class PlayerManager extends EventEmitter {
     public client: Client;
     public nodes = new Collection<string, LavalinkNode>();
+    public players = new Collection<string, Player>();
     public user: string;
     public shards: number;
-    private Player: any; // tslint:disable-line: variable-name
+    private Player: Player;
 
     public constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions) {
         super();
@@ -18,38 +48,34 @@ export class PlayerManager extends Collection<string, Player> {
         this.client = client;
         this.user = client.user ? client.user.id : options.user;
         this.shards = client.shard ? client.shard.count : options.shards;
-        this.Player = options.Player || Player;
+        this.Player = (options.Player as any) || Player;
 
         for (const node of nodes) this.createNode(node);
 
         client.on("raw", message => {
             switch (message.t) {
-                case "VOICE_SERVER_UPDATE": return this.voiceServerUpdate(message.d);
-                case "VOICE_STATE_UPDATE": return this.voiceStateUpdate(message.d);
+                case "VOICE_SERVER_UPDATE": this.voiceServerUpdate(message.d);
             }
         });
     }
 
-    private createNode(options: LavalinkNodeOptions): LavalinkNode {
+    public createNode(options: LavalinkNodeOptions): LavalinkNode {
         const node = new LavalinkNode(this, options);
-
-        node.on("error", error => this.client.emit("error", error));
-        node.on("message", this.onMessage.bind(this));
 
         this.nodes.set(options.host, node);
 
         return node;
     }
 
-    public removeNode(host: string | LavalinkNode): boolean {
-        const node = host instanceof LavalinkNode ? host : this.nodes.get(host);
+    public removeNode(host: string): boolean {
+        const node = this.nodes.get(host);
         if (!node) return false;
         node.removeAllListeners();
-        return this.nodes.delete(node.host);
+        return this.nodes.delete(host);
     }
 
     public join(data: PlayerManagerJoinData, options?: PlayerManagerJoinOptions): Player {
-        const player = this.get(data.guild);
+        const player = this.players.get(data.guild);
         if (player) return player;
         this.sendWS({
             op: 4,
@@ -63,7 +89,7 @@ export class PlayerManager extends Collection<string, Player> {
         return this.spawnPlayer(data);
     }
 
-    public leave(guild: string): boolean {
+    public async leave(guild: string): Promise<boolean> {
         this.sendWS({
             op: 4,
             d: {
@@ -73,11 +99,11 @@ export class PlayerManager extends Collection<string, Player> {
                 self_deaf: false
             }
         });
-        const player = this.get(guild);
+        const player = this.players.get(guild);
         if (!player) return false;
         player.removeAllListeners();
-        player.destroy();
-        return this.delete(guild);
+        await player.destroy();
+        return this.players.delete(guild);
     }
 
     /**
@@ -89,7 +115,7 @@ export class PlayerManager extends Collection<string, Player> {
     private async voiceServerUpdate(data: VoiceServerUpdateData): Promise<void> {
         const guild = this.client.guilds.get(data.guild_id);
         if (!guild) return;
-        const player = this.get(data.guild_id);
+        const player = this.players.get(data.guild_id);
         if (!player) return;
         if (!guild.me) await guild.members.fetch(this.client.user.id).catch(() => null);
         player.connect({
@@ -108,18 +134,15 @@ export class PlayerManager extends Collection<string, Player> {
      * @returns {Player}
      */
     private spawnPlayer(data: PlayerManagerJoinData) {
-        const exists = this.get(data.guild);
+        const exists = this.players.get(data.guild);
         if (exists) return exists;
         const node = this.nodes.get(data.host);
         if (!node) throw new Error(`INVALID_HOST: No available node with ${data.host}`);
-        const player: Player = new this.Player({
+        const player: Player = new (this.Player as any)(node, {
             id: data.guild,
-            client: this.client,
-            manager: this,
-            node,
             channel: data.channel
         });
-        this.set(data.guild, player);
+        this.players.set(data.guild, player);
         return player;
     }
 

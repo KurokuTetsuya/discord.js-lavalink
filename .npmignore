@@ -1,11 +1,12 @@
 node_modules
 scripts
-testing
 .eslintrc.js
 .gitattributes
 .gitignore
 .travis.yml
 docs.js
 tslint.json
+src
 example
-azure-pipelines.yml
+.npmrc
+yarn.lock

@@ -19,11 +19,12 @@
 		"sourceMap": true,
 		"strictBindCallApply": true,
         "target": "esnext",
-        "types": ["node", "discord.js"]
+        "types": ["@types/node", "@types/ws", "discord.js"]
 	},
 	"exclude": [
 		"node_modules",
 		"example",
+		"scripts"
 	],
 	"include": [
 		"./src/**/*"

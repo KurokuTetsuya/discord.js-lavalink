@@ -1,5 +1,3 @@
-import { LavalinkNode } from "./lib/LavalinkNode";
-import { Player } from "./lib/Player";
-import { PlayerManager } from "./lib/PlayerManager";
-
-export { LavalinkNode, Player, PlayerManager };
+export * from "./lib/LavalinkNode";
+export * from "./lib/Player";
+export * from "./lib/PlayerManager";

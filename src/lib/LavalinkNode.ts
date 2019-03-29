@@ -80,12 +80,15 @@ export class LavalinkNode extends EventEmitter {
         this.ws = new WebSocket(this.address, { headers });
 
         this.ws
-            .on("open", () => this.emit("ready"))
+            .on("open", () => {
+                this.manager.emit("ready", this);
+                this.configureResuming();
+            })
             .on("close", (code: number, reason: string) => {
-                this.emit("disconnect", code, reason);
+                this.manager.emit("disconnect", this, code, reason);
                 if (code !== 1000 || reason !== "destroy") return this._reconnect();
             }).on("error", (error: Error) => {
-                this.emit("error", error);
+                this.manager.emit("error", this, error);
                 this._reconnect();
             })
             .on("message", (data: WebSocket.Data) => {
@@ -98,12 +101,12 @@ export class LavalinkNode extends EventEmitter {
 
                 const msg = JSON.parse(d.toString());
 
-                if (msg.op && msg.op === "stats") this.stats = msg;
+                if (msg.op && msg.op === "stats") this.stats = { ...msg };
                 delete (this.stats as any).op;
 
-                if (msg.guildId && this.manager.has(msg.guildId)) this.manager.get(msg.guildId).emit(msg.op, msg);
+                if (msg.guildId && this.manager.players.has(msg.guildId)) this.manager.players.get(msg.guildId).emit(msg.op, msg);
 
-                this.emit("raw", msg);
+                this.manager.emit("raw", this, msg);
             });
     }
 
@@ -119,6 +122,12 @@ export class LavalinkNode extends EventEmitter {
         });
     }
 
+    public configureResuming(key: string = this.manager.user, timeout: number = 120) {
+        this.resumeKey = key;
+
+        return this.send({ op: "configureResuming", key, timeout });
+    }
+
     public destroy(): boolean {
         if (!this.OPEN) return false;
         this.ws.close(1000, "destroy");
@@ -129,11 +138,12 @@ export class LavalinkNode extends EventEmitter {
     private _reconnect() {
         this.reconnect = setTimeout(() => {
             this.ws.removeAllListeners();
+            this.ws = null;
             /**
 			 * Emmited when the node is attempting a reconnect
 			 * @event LavalinkNode#reconnecting
 			 */
-            this.emit("reconnecting");
+            this.manager.emit("reconnecting", this);
             this.connect();
         }, this.reconnectInterval);
     }
@@ -155,7 +165,7 @@ export class LavalinkNode extends EventEmitter {
     }
 
     public get OPEN(): boolean {
-        return this.ws.readyState === WebSocket.OPEN;
+        return this.ws && this.ws.readyState === WebSocket.OPEN;
     }
 
     private get address(): string {
