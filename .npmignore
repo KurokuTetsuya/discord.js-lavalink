@@ -6,7 +6,6 @@ scripts
 .travis.yml
 docs.js
 tslint.json
-src
 example
 .npmrc
 yarn.lock
