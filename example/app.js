@@ -30,6 +30,7 @@ const client = new MusicClient();
 
 client.on("message", async msg => {
     if (msg.author.bot || !msg.guild) return;
+    if (!["412180910587379712", "431926924433162261"].includes(msg.guild.id)) return;
     if (!msg.content.startsWith(config.prefix)) return;
     const args = msg.content.slice(config.prefix.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();

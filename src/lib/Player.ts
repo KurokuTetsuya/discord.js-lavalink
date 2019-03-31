@@ -10,7 +10,7 @@ export type PlayerOptions = {
 
 export type PlayerState = {
     time?: number;
-    positon?: number;
+    position?: number;
     volume: number;
 };
 
@@ -25,6 +25,15 @@ export type PlayerEqualizerBands = {
     gain: number;
 }[];
 
+export type PlayerUpdateVoiceState = {
+    sessionId: string;
+    event: {
+        token: string;
+        guild_id: string;
+        endpoint: string;
+    };
+};
+
 export class Player extends EventEmitter {
     public client: Client;
     public manager: PlayerManager;
@@ -35,6 +44,8 @@ export class Player extends EventEmitter {
     public playing: boolean = false;
     public timestamp?: number = null;
     public paused: boolean = false;
+    public track?: string = null;
+    public voiceUpdateState = {};
 
     public constructor(node: LavalinkNode, options: PlayerOptions) {
         super();
@@ -50,6 +61,8 @@ export class Player extends EventEmitter {
             switch (data.type) {
                 case "TrackEndEvent": {
                     if (data.reason !== "REPLACED") this.playing = false;
+                    this.track = null;
+                    this.timestamp = null;
                     if (this.listenerCount("end")) this.emit("end", data);
                 }
                 case "TrackExceptionEvent": {
@@ -66,63 +79,59 @@ export class Player extends EventEmitter {
             }
         })
         .on("playerUpdate", data => {
-            this.state = { ...data, ...this.state };
+            this.state = { volume: this.state.volume, ...data.state };
         });
     }
 
-    public async play(track: string, options: PlayerPlayOptions = { startTime: 0, endTime: 0, noReplace: false }) {
-        const d = await this.send("play", {
-            track,
-            ...options
-        });
+    public async play(track: string, options: PlayerPlayOptions = {}): Promise<boolean> {
+        const d = await this.send("play", { ...options, track });
+        this.track = track;
         this.playing = true;
         this.timestamp = Date.now();
         return d;
     }
 
-    public async stop() {
+    public async stop(): Promise<boolean> {
         const d = await this.send("stop");
         this.playing = false;
         this.timestamp = null;
         return d;
     }
 
-    public async pause(pause: boolean = true) {
+    public async pause(pause: boolean = true): Promise<boolean> {
         const d = await this.send("pause", { pause });
         this.paused = pause;
         return d;
     }
 
-    public resume() {
+    public resume(): Promise<boolean> {
         return this.pause(false);
     }
 
-    public async volume(volume: number) {
+    public async volume(volume: number): Promise<boolean> {
         const d = await this.send("volume", { volume });
         this.state.volume = volume;
         return d;
     }
 
-    public seek(position: number) {
+    public seek(position: number): Promise<boolean> {
         return this.send("seek", { position });
     }
 
-    public equalizer(bands: PlayerEqualizerBands) {
+    public equalizer(bands: PlayerEqualizerBands): Promise<boolean> {
         return this.send("equalizer", { bands });
     }
 
-    public destroy() {
+    public destroy(): Promise<boolean> {
         return this.send("destroy");
     }
 
-    public connect(data) {
-        return this.send("voiceUpdate", {
-            sessionId: data.session,
-            event: data.event
-        });
+    public connect(data: PlayerUpdateVoiceState): Promise<boolean> {
+        this.voiceUpdateState = data;
+        return this.send("voiceUpdate", data);
     }
 
-    private send(op: string, data?: object) {
+    private send(op: string, data?: object): Promise<boolean> {
         if (!this.node.OPEN) return Promise.reject(new Error("No available websocket connection for selected node."));
         return this.node.send({
             ...data,

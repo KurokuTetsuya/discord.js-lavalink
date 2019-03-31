@@ -1,5 +1,5 @@
 import { Client, Collection } from "discord.js";
-import { Player } from "./Player";
+import { Player, PlayerUpdateVoiceState } from "./Player";
 import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { EventEmitter } from "events";
 
@@ -74,7 +74,7 @@ export class PlayerManager extends EventEmitter {
         return this.nodes.delete(host);
     }
 
-    public join(data: PlayerManagerJoinData, options?: PlayerManagerJoinOptions): Player {
+    public join(data: PlayerManagerJoinData, options: PlayerManagerJoinOptions = { selfdeaf: false, selfmute: false }): Player {
         const player = this.players.get(data.guild);
         if (player) return player;
         this.sendWS({
@@ -106,21 +106,47 @@ export class PlayerManager extends EventEmitter {
         return this.players.delete(guild);
     }
 
+    public async switch(player: Player, node: LavalinkNode) {
+        const { id, channel, track, state, voiceUpdateState } = { ...player };
+        const position = (state.position + 2000) || 0;
+
+        // @ts-ignore
+        const events = player._events;
+
+        player.removeAllListeners();
+        await player.destroy();
+        this.players.delete(id);
+
+        const newPlayer = this.spawnPlayer({
+            guild: id,
+            channel,
+            host: node.host
+        });
+
+        // @ts-ignore
+        newPlayer._events = events;
+
+        await newPlayer.connect((voiceUpdateState as PlayerUpdateVoiceState));
+        await newPlayer.volume(state.volume);
+        await newPlayer.play(track, { startTime: position });
+
+        return newPlayer;
+    }
     /**
      * Used for the Voice Server Update event
      * @param {Object} data Data
      * @returns {void}
      * @private
      */
-    private async voiceServerUpdate(data: VoiceServerUpdateData): Promise<void> {
+    public async voiceServerUpdate(data: VoiceServerUpdateData): Promise<void> {
         const guild = this.client.guilds.get(data.guild_id);
         if (!guild) return;
         const player = this.players.get(data.guild_id);
         if (!player) return;
         if (!guild.me) await guild.members.fetch(this.client.user.id).catch(() => null);
-        player.connect({
+        await player.connect({
             // @ts-ignore: support both versions of discord.js
-            session: guild.me.voice ? guild.me.voice.sessionID : guild.me.voiceSessionID,
+            sessionId: guild.me.voice ? guild.me.voice.sessionID : guild.me.voiceSessionID,
             event: data
         });
     }

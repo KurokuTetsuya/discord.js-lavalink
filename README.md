@@ -47,6 +47,11 @@ const manager = new PlayerManager(client, nodes, {
     user: client.user.id, // Client id
     shards: shardCount // Total number of shards your bot is operating on
 });
+
+manager.on("error", (node, error) => {
+    node // is the node which the error is from
+    error // is the error;
+});
 ```
 
 Resolving tracks using LavaLink REST API
