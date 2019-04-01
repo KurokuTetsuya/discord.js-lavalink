@@ -86,7 +86,7 @@ class Player extends events_1.EventEmitter {
         return this.send("voiceUpdate", data);
     }
     send(op, data) {
-        if (!this.node.OPEN)
+        if (!this.node.connected)
             return Promise.reject(new Error("No available websocket connection for selected node."));
         return this.node.send({
             ...data,

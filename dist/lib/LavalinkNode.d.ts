@@ -47,6 +47,6 @@ export declare class LavalinkNode extends EventEmitter {
     readonly port: string | number;
     readonly password: string;
     readonly reconnectInterval: number;
-    readonly OPEN: boolean;
+    readonly connected: boolean;
     private readonly address;
 }
