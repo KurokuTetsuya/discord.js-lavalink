@@ -42,6 +42,6 @@ export declare class PlayerManager extends EventEmitter {
     switch(player: Player, node: LavalinkNode): Promise<Player>;
     voiceServerUpdate(data: VoiceServerUpdateData): Promise<void>;
     private spawnPlayer;
-    readonly idealNode: LavalinkNode;
+    readonly idealNodes: Collection<string, LavalinkNode>;
     sendWS(data: any): void;
 }

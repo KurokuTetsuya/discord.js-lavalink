@@ -113,12 +113,12 @@ class PlayerManager extends events_1.EventEmitter {
         this.players.set(data.guild, player);
         return player;
     }
-    get idealNode() {
+    get idealNodes() {
         return this.nodes.filter(node => node.connected).sort((a, b) => {
             const aload = a.stats.cpu ? (a.stats.cpu.systemLoad / a.stats.cpu.cores) * 100 : 0;
             const bload = b.stats.cpu ? (b.stats.cpu.systemLoad / b.stats.cpu.cores) * 100 : 0;
             return aload - bload;
-        }).first();
+        });
     }
     sendWS(data) {
         return typeof this.client.ws.send === "function" ? this.client.ws.send(data) : this.client.guilds.get(data.d.guild_id).shard.send(data);
