@@ -132,6 +132,7 @@ export class PlayerManager extends EventEmitter {
 
         return newPlayer;
     }
+
     /**
      * Used for the Voice Server Update event
      * @param {Object} data Data
@@ -170,6 +171,14 @@ export class PlayerManager extends EventEmitter {
         });
         this.players.set(data.guild, player);
         return player;
+    }
+
+    public get idealNode() {
+        return this.nodes.filter(node => node.connected).sort((a, b) => {
+            const aload = a.stats.cpu ? (a.stats.cpu.systemLoad / a.stats.cpu.cores) * 100 : 0;
+            const bload = b.stats.cpu ? (b.stats.cpu.systemLoad / b.stats.cpu.cores) * 100 : 0;
+            return aload - bload;
+        }).first();
     }
 
     /**
