@@ -114,7 +114,7 @@ export class LavalinkNode extends EventEmitter {
         return new Promise((res, rej) => {
             const parsed = JSON.stringify(msg);
 
-            if (!this.OPEN) return res(false);
+            if (!this.connected) return res(false);
             this.ws.send(parsed, (error: Error) => {
                 if (error) rej(error);
                 else res(true);
@@ -129,7 +129,7 @@ export class LavalinkNode extends EventEmitter {
     }
 
     public destroy(): boolean {
-        if (!this.OPEN) return false;
+        if (!this.connected) return false;
         this.ws.close(1000, "destroy");
         this.ws = null;
         return true;
@@ -164,7 +164,7 @@ export class LavalinkNode extends EventEmitter {
         return this.options.reconnectInterval || 5000;
     }
 
-    public get OPEN(): boolean {
+    public get connected(): boolean {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
     }
 

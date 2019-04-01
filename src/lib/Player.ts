@@ -132,7 +132,7 @@ export class Player extends EventEmitter {
     }
 
     private send(op: string, data?: object): Promise<boolean> {
-        if (!this.node.OPEN) return Promise.reject(new Error("No available websocket connection for selected node."));
+        if (!this.node.connected) return Promise.reject(new Error("No available websocket connection for selected node."));
         return this.node.send({
             ...data,
             op,
