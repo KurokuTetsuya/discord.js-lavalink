@@ -47,7 +47,7 @@ export class PlayerManager extends EventEmitter {
 
         this.client = client;
         this.user = client.user ? client.user.id : options.user;
-        this.shards = client.shard ? client.shard.count : options.shards;
+        this.shards = options.shards || client.shard ? client.shard.count : 1;
         this.Player = (options.Player as any) || Player;
 
         for (const node of nodes) this.createNode(node);
