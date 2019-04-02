@@ -5,7 +5,7 @@ const Player_1 = require("./Player");
 const LavalinkNode_1 = require("./LavalinkNode");
 const events_1 = require("events");
 class PlayerManager extends events_1.EventEmitter {
-    constructor(client, nodes, options) {
+    constructor(client, nodes, options = {}) {
         super();
         this.nodes = new discord_js_1.Collection();
         this.players = new discord_js_1.Collection();

@@ -4,8 +4,8 @@ import { Player } from "./Player";
 import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { EventEmitter } from "events";
 export declare type PlayerManagerOptions = {
-    user: string;
-    shards: number;
+    user?: string;
+    shards?: number;
     Player?: Player;
 };
 export declare type PlayerManagerNodes = {
@@ -34,7 +34,7 @@ export declare class PlayerManager extends EventEmitter {
     user: string;
     shards: number;
     private Player;
-    constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions);
+    constructor(client: Client, nodes: LavalinkNodeOptions[], options?: PlayerManagerOptions);
     createNode(options: LavalinkNodeOptions): LavalinkNode;
     removeNode(host: string): boolean;
     join(data: PlayerManagerJoinData, options?: PlayerManagerJoinOptions): Player;

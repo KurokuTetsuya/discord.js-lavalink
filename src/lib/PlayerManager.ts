@@ -4,8 +4,8 @@ import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { EventEmitter } from "events";
 
 export type PlayerManagerOptions = {
-    user: string;
-    shards: number;
+    user?: string;
+    shards?: number;
     Player?: Player;
 };
 
@@ -40,7 +40,7 @@ export class PlayerManager extends EventEmitter {
     public shards: number;
     private Player: Player;
 
-    public constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions) {
+    public constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions = {}) {
         super();
 
         if (!client) throw new Error("INVALID_CLIENT: No client provided.");
