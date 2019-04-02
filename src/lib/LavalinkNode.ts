@@ -67,11 +67,11 @@ export class LavalinkNode extends EventEmitter {
     }
 
     private connect(): void {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
+        if (this.connected) return;
 
         const headers = {
             Authorization: this.password,
-            "Num-Shards": String(this.manager.shards),
+            "Num-Shards": String(this.manager.shards || 1),
             "User-Id": this.manager.user
         };
 
