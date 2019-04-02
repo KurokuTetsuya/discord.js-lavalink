@@ -13,7 +13,7 @@ class PlayerManager extends events_1.EventEmitter {
             throw new Error("INVALID_CLIENT: No client provided.");
         this.client = client;
         this.user = client.user ? client.user.id : options.user;
-        this.shards = options.shards || client.shard ? client.shard.count : 1;
+        this.shards = options.shards || client.shard && client.shard.count ? client.shard.count : 1;
         this.Player = options.Player || Player_1.Player;
         for (const node of nodes)
             this.createNode(node);
