@@ -11,6 +11,7 @@ export declare type PlayerState = {
     time?: number;
     position?: number;
     volume: number;
+    equalizer: PlayerEqualizerBands;
 };
 export declare type PlayerPlayOptions = {
     startTime?: number;

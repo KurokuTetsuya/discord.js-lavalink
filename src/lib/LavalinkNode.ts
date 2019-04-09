@@ -122,7 +122,7 @@ export class LavalinkNode extends EventEmitter {
         });
     }
 
-    public configureResuming(key: string = this.manager.user, timeout: number = 120) {
+    public configureResuming(key: string = this.manager.user, timeout: number = 120): Promise<boolean> {
         this.resumeKey = key;
 
         return this.send({ op: "configureResuming", key, timeout });
@@ -135,7 +135,7 @@ export class LavalinkNode extends EventEmitter {
         return true;
     }
 
-    private _reconnect() {
+    private _reconnect(): void {
         this.reconnect = setTimeout(() => {
             this.ws.removeAllListeners();
             this.ws = null;

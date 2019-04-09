@@ -24,7 +24,7 @@
 			false
 		],
 		"variable-name": [true, "ban-keywords", "allow-leading-underscore"],
-		"interface-name": [true, "always-prefix"],
+		"interface-name": false,
 		"no-conditional-assignment": true,
 		"use-isnan": true,
 		"no-trailing-whitespace": true,

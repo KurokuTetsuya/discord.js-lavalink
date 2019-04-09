@@ -4,7 +4,7 @@ const events_1 = require("events");
 class Player extends events_1.EventEmitter {
     constructor(node, options) {
         super();
-        this.state = { volume: 100 };
+        this.state = { volume: 100, equalizer: [] };
         this.playing = false;
         this.timestamp = null;
         this.paused = false;
@@ -35,7 +35,7 @@ class Player extends events_1.EventEmitter {
                         this.emit("end", data);
                 }
                 case "WebSocketClosedEvent": {
-                    if (this.listenerCount("error"))
+                    if (this.listenerCount("end"))
                         this.emit("error", data);
                 }
                 default: if (this.listenerCount("warn"))
@@ -75,8 +75,10 @@ class Player extends events_1.EventEmitter {
     seek(position) {
         return this.send("seek", { position });
     }
-    equalizer(bands) {
-        return this.send("equalizer", { bands });
+    async equalizer(bands) {
+        const d = await this.send("equalizer", { bands });
+        this.state.equalizer = bands;
+        return d;
     }
     destroy() {
         return this.send("destroy");

@@ -3,7 +3,7 @@ const fetch = require("node-fetch");
 const { inspect } = require("util");
 const { URLSearchParams } = require("url");
 const { Client } = require("discord.js");
-const { PlayerManager } = require("../dist/index.js");
+const { PlayerManager, Player } = require("../dist/index.js");
 
 class MusicClient extends Client {
 
@@ -13,12 +13,13 @@ class MusicClient extends Client {
         this.player = null;
 
         this.on("ready", () => {
-            this.player = new PlayerManager(client, config.nodes, {
-                user: client.user.id,
-                shards: 1
+            this.player = new PlayerManager(this, config.nodes, {
+                user: this.user.id,
+                shards: 1,
+                Player: ExamplePlayer
             });
 
-            this.player.on("raw", (node, data) => console.log(data));
+            this.player.on("raw", (node, data) => console.log(node.host, data));
             this.player.on("error", console.error);
 
             console.log("Bot is online!");
@@ -30,7 +31,6 @@ const client = new MusicClient();
 
 client.on("message", async msg => {
     if (msg.author.bot || !msg.guild) return;
-    if (!["412180910587379712", "431926924433162261"].includes(msg.guild.id)) return;
     if (!msg.content.startsWith(config.prefix)) return;
     const args = msg.content.slice(config.prefix.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
@@ -40,7 +40,6 @@ client.on("message", async msg => {
 
         const track = args.join(" ");
         const [song] = await getSongs(`ytsearch: ${track}`);
-        console.log(song);
         if (!song) return msg.reply("No songs found. try again!");
 
         const player = client.player.join({
@@ -53,12 +52,8 @@ client.on("message", async msg => {
 
         await player.play(song.track);
 
-        player.once("error", console.error);
-        player.once("end", async data => {
-            if (data.reason === "REPLACED") return;
-            msg.channel.send("Song has ended...");
-            await client.player.leave(msg.guild.id);
-        });
+        player.textChannel = msg.channel;
+
         return msg.reply(`Now playing: **${song.info.title}** by *${song.info.author}*`);
     }
     if (command === "leave") {
@@ -115,6 +110,22 @@ function getSongs(search) {
             console.error(err);
             return null;
         });
+}
+
+class ExamplePlayer extends Player {
+
+    constructor(...args) {
+        super(...args);
+
+        this.textChannel = null;
+
+        this.on("end", async data => {
+            if (data.reason === "REPLACED" || data.reason === "STOPPED") return;
+            await client.player.leave(this.id);
+            await this.textChannel.send("Song has ended...");
+        }).on("error", console.error);
+    }
+
 }
 
 client.login(config.token);

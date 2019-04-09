@@ -13,7 +13,7 @@ class PlayerManager extends events_1.EventEmitter {
             throw new Error("INVALID_CLIENT: No client provided.");
         this.client = client;
         this.user = client.user ? client.user.id : options.user;
-        this.shards = options.shards || client.shard && client.shard.count ? client.shard.count : 1;
+        this.shards = options.shards || 1;
         this.Player = options.Player || Player_1.Player;
         for (const node of nodes)
             this.createNode(node);
@@ -70,20 +70,13 @@ class PlayerManager extends events_1.EventEmitter {
     async switch(player, node) {
         const { id, channel, track, state, voiceUpdateState } = { ...player };
         const position = (state.position + 2000) || 0;
-        const events = player._events;
-        player.removeAllListeners();
         await player.destroy();
-        this.players.delete(id);
-        const newPlayer = this.spawnPlayer({
-            guild: id,
-            channel,
-            host: node.host
-        });
-        newPlayer._events = events;
-        await newPlayer.connect(voiceUpdateState);
-        await newPlayer.volume(state.volume);
-        await newPlayer.play(track, { startTime: position });
-        return newPlayer;
+        player.node = node;
+        await player.connect(voiceUpdateState);
+        await player.volume(state.volume);
+        await player.equalizer(state.equalizer);
+        await player.play(track, { startTime: position });
+        return player;
     }
     async voiceServerUpdate(data) {
         const guild = this.client.guilds.get(data.guild_id);
@@ -121,6 +114,8 @@ class PlayerManager extends events_1.EventEmitter {
         });
     }
     sendWS(data) {
+        if (!this.client.guilds.has(data.d.guild_id))
+            return;
         return typeof this.client.ws.send === "function" ? this.client.ws.send(data) : this.client.guilds.get(data.d.guild_id).shard.send(data);
     }
 }

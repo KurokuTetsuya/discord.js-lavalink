@@ -12,6 +12,7 @@ export type PlayerState = {
     time?: number;
     position?: number;
     volume: number;
+    equalizer: PlayerEqualizerBands;
 };
 
 export type PlayerPlayOptions = {
@@ -40,7 +41,7 @@ export class Player extends EventEmitter {
     public node: LavalinkNode;
     public id: string;
     public channel: string;
-    public state: PlayerState = { volume: 100 };
+    public state: PlayerState = { volume: 100, equalizer: [] };
     public playing: boolean = false;
     public timestamp?: number = null;
     public paused: boolean = false;
@@ -73,7 +74,7 @@ export class Player extends EventEmitter {
                     if (this.listenerCount("end")) this.emit("end", data);
                 }
                 case "WebSocketClosedEvent": {
-                    if (this.listenerCount("error")) this.emit("error", data);
+                    if (this.listenerCount("end")) this.emit("error", data);
                 }
                 default: if (this.listenerCount("warn")) this.emit("warn", `Unexpected event type: ${data.type}`);
             }
@@ -118,8 +119,10 @@ export class Player extends EventEmitter {
         return this.send("seek", { position });
     }
 
-    public equalizer(bands: PlayerEqualizerBands): Promise<boolean> {
-        return this.send("equalizer", { bands });
+    public async equalizer(bands: PlayerEqualizerBands): Promise<boolean> {
+        const d = await this.send("equalizer", { bands });
+        this.state.equalizer = bands;
+        return d;
     }
 
     public destroy(): Promise<boolean> {

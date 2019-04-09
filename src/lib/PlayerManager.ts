@@ -47,7 +47,7 @@ export class PlayerManager extends EventEmitter {
 
         this.client = client;
         this.user = client.user ? client.user.id : options.user;
-        this.shards = client.shard && client.shard.count ? client.shard.count : options.shards || 1;
+        this.shards = options.shards || 1;
         this.Player = (options.Player as any) || Player;
 
         for (const node of nodes) this.createNode(node);
@@ -106,31 +106,20 @@ export class PlayerManager extends EventEmitter {
         return this.players.delete(guild);
     }
 
-    public async switch(player: Player, node: LavalinkNode) {
-        const { id, channel, track, state, voiceUpdateState } = { ...player };
+    public async switch(player: Player, node: LavalinkNode): Promise<Player> {
+        const { id, channel, track, state, voiceUpdateState } = ({ ...player } as any);
         const position = (state.position + 2000) || 0;
 
-        // @ts-ignore
-        const events = player._events;
-
-        player.removeAllListeners();
         await player.destroy();
-        this.players.delete(id);
 
-        const newPlayer = this.spawnPlayer({
-            guild: id,
-            channel,
-            host: node.host
-        });
+        player.node = node;
 
-        // @ts-ignore
-        newPlayer._events = events;
+        await player.connect((voiceUpdateState as PlayerUpdateVoiceState));
+        await player.volume(state.volume);
+        await player.equalizer(state.equalizer);
+        await player.play(track, { startTime: position });
 
-        await newPlayer.connect((voiceUpdateState as PlayerUpdateVoiceState));
-        await newPlayer.volume(state.volume);
-        await newPlayer.play(track, { startTime: position });
-
-        return newPlayer;
+        return player;
     }
 
     /**
@@ -160,7 +149,7 @@ export class PlayerManager extends EventEmitter {
      * @param {string} data.host Player host id
      * @returns {Player}
      */
-    private spawnPlayer(data: PlayerManagerJoinData) {
+    private spawnPlayer(data: PlayerManagerJoinData): Player {
         const exists = this.players.get(data.guild);
         if (exists) return exists;
         const node = this.nodes.get(data.host);
@@ -173,7 +162,7 @@ export class PlayerManager extends EventEmitter {
         return player;
     }
 
-    public get idealNodes() {
+    public get idealNodes(): Collection<string, LavalinkNode> {
         return this.nodes.filter(node => node.connected).sort((a, b) => {
             const aload = a.stats.cpu ? (a.stats.cpu.systemLoad / a.stats.cpu.cores) * 100 : 0;
             const bload = b.stats.cpu ? (b.stats.cpu.systemLoad / b.stats.cpu.cores) * 100 : 0;
@@ -190,6 +179,7 @@ export class PlayerManager extends EventEmitter {
      * @private
      */
     public sendWS(data): void {
+        if (!this.client.guilds.has(data.d.guild_id)) return;
         // @ts-ignore: support both versions of discord.js
         return typeof this.client.ws.send === "function" ? this.client.ws.send(data) : this.client.guilds.get(data.d.guild_id).shard.send(data);
     }
