@@ -60,23 +60,25 @@ export class Player extends EventEmitter {
 
         this.on("event", data => {
             switch (data.type) {
-                case "TrackEndEvent": {
+                case "TrackEndEvent":
                     if (data.reason !== "REPLACED") this.playing = false;
                     this.track = null;
                     this.timestamp = null;
                     if (this.listenerCount("end")) this.emit("end", data);
-                }
-                case "TrackExceptionEvent": {
+                    break;
+                case "TrackExceptionEvent":
                     if (this.listenerCount("error")) this.emit("error", data);
-                }
-                case "TrackStuckEvent": {
+                    break;
+                case "TrackStuckEvent":
                     this.stop();
                     if (this.listenerCount("end")) this.emit("end", data);
-                }
-                case "WebSocketClosedEvent": {
+                    break;
+                case "WebSocketClosedEvent":
                     if (this.listenerCount("error")) this.emit("error", data);
-                }
-                default: if (this.listenerCount("warn")) this.emit("warn", `Unexpected event type: ${data.type}`);
+                    break;
+                default:
+                    if (this.listenerCount("warn")) this.emit("warn", `Unexpected event type: ${data.type}`);
+                    break;
             }
         })
         .on("playerUpdate", data => {
