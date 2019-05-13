@@ -32,8 +32,12 @@ export type LavalinkNodeStats = {
 };
 
 export class LavalinkNode extends EventEmitter {
-    public options: LavalinkNodeOptions;
     public manager: PlayerManager;
+    public host: string;
+    public port: number | string;
+    public reconnectInterval: number;
+    public password: string;
+    private address: string;
     public ws!: WebSocket;
     private reconnect?: NodeJS.Timeout;
     public stats?: LavalinkNodeStats;
@@ -43,7 +47,12 @@ export class LavalinkNode extends EventEmitter {
         super();
 
         this.manager = manager;
-        this.options = options;
+        this.host = options.host;
+        this.port = options.port || 2333;
+        this.reconnectInterval = options.reconnectInterval || 5000;
+
+        Object.defineProperty(this, "password", { value: options.password || "youshallnotpass" });
+        Object.defineProperty(this, "address", { value: `ws://${this.host}:${this.port}` });
 
         this.ws = null;
         this.stats = {
@@ -81,6 +90,7 @@ export class LavalinkNode extends EventEmitter {
 
         this.ws
             .on("open", () => {
+                if (this.reconnect) this.reconnect = null;
                 this.manager.emit("ready", this);
                 this.configureResuming();
             })
@@ -139,37 +149,14 @@ export class LavalinkNode extends EventEmitter {
         this.reconnect = setTimeout(() => {
             this.ws.removeAllListeners();
             this.ws = null;
-            /**
-			 * Emmited when the node is attempting a reconnect
-			 * @event LavalinkNode#reconnecting
-			 */
+
             this.manager.emit("reconnecting", this);
             this.connect();
         }, this.reconnectInterval);
-    }
-
-    public get host(): string {
-        return this.options.host;
-    }
-
-    public get port(): string | number {
-        return this.options.port || 2333;
-    }
-
-    public get password(): string {
-        return this.options.password || "youshallnotpass";
-    }
-
-    public get reconnectInterval(): number {
-        return this.options.reconnectInterval || 5000;
     }
 
     public get connected(): boolean {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
     }
 
-    private get address(): string {
-        const { host, port } = this.options;
-        return `ws://${host}:${port}`;
-    }
 }

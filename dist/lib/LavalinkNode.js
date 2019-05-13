@@ -6,7 +6,11 @@ class LavalinkNode extends events_1.EventEmitter {
     constructor(manager, options) {
         super();
         this.manager = manager;
-        this.options = options;
+        this.host = options.host;
+        this.port = options.port || 2333;
+        this.reconnectInterval = options.reconnectInterval || 5000;
+        Object.defineProperty(this, "password", { value: options.password || "youshallnotpass" });
+        Object.defineProperty(this, "address", { value: `ws://${this.host}:${this.port}` });
         this.ws = null;
         this.stats = {
             players: 0,
@@ -39,6 +43,8 @@ class LavalinkNode extends events_1.EventEmitter {
         this.ws = new WebSocket(this.address, { headers });
         this.ws
             .on("open", () => {
+            if (this.reconnect)
+                this.reconnect = null;
             this.manager.emit("ready", this);
             this.configureResuming();
         })
@@ -101,24 +107,8 @@ class LavalinkNode extends events_1.EventEmitter {
             this.connect();
         }, this.reconnectInterval);
     }
-    get host() {
-        return this.options.host;
-    }
-    get port() {
-        return this.options.port || 2333;
-    }
-    get password() {
-        return this.options.password || "youshallnotpass";
-    }
-    get reconnectInterval() {
-        return this.options.reconnectInterval || 5000;
-    }
     get connected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
-    }
-    get address() {
-        const { host, port } = this.options;
-        return `ws://${host}:${port}`;
     }
 }
 exports.LavalinkNode = LavalinkNode;

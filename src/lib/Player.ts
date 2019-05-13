@@ -74,7 +74,7 @@ export class Player extends EventEmitter {
                     if (this.listenerCount("end")) this.emit("end", data);
                 }
                 case "WebSocketClosedEvent": {
-                    if (this.listenerCount("end")) this.emit("error", data);
+                    if (this.listenerCount("error")) this.emit("error", data);
                 }
                 default: if (this.listenerCount("warn")) this.emit("warn", `Unexpected event type: ${data.type}`);
             }

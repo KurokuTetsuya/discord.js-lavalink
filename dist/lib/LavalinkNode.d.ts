@@ -31,8 +31,12 @@ export declare type LavalinkNodeStats = {
     };
 };
 export declare class LavalinkNode extends EventEmitter {
-    options: LavalinkNodeOptions;
     manager: PlayerManager;
+    host: string;
+    port: number | string;
+    reconnectInterval: number;
+    password: string;
+    private address;
     ws: WebSocket;
     private reconnect?;
     stats?: LavalinkNodeStats;
@@ -43,10 +47,5 @@ export declare class LavalinkNode extends EventEmitter {
     configureResuming(key?: string, timeout?: number): Promise<boolean>;
     destroy(): boolean;
     private _reconnect;
-    readonly host: string;
-    readonly port: string | number;
-    readonly password: string;
-    readonly reconnectInterval: number;
     readonly connected: boolean;
-    private readonly address;
 }

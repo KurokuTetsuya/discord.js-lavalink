@@ -122,12 +122,6 @@ export class PlayerManager extends EventEmitter {
         return player;
     }
 
-    /**
-     * Used for the Voice Server Update event
-     * @param {Object} data Data
-     * @returns {void}
-     * @private
-     */
     public async voiceServerUpdate(data: VoiceServerUpdateData): Promise<void> {
         const guild = this.client.guilds.get(data.guild_id);
         if (!guild) return;
@@ -141,14 +135,6 @@ export class PlayerManager extends EventEmitter {
         });
     }
 
-    /**
-     * Creates or returns a player
-     * @param {Object} data Data for the player
-     * @param {string} data.guild Player guild id
-     * @param {string} data.channel Player channel id
-     * @param {string} data.host Player host id
-     * @returns {Player}
-     */
     private spawnPlayer(data: PlayerManagerJoinData): Player {
         const exists = this.players.get(data.guild);
         if (exists) return exists;
@@ -170,14 +156,6 @@ export class PlayerManager extends EventEmitter {
         });
     }
 
-    /**
-     * Private function for sending WS packets.
-     * @param {Object} data Data for the player
-     * @param {number} data.op OP for WS
-     * @param {Object} data.d The actual data for the WS
-     * @returns {void}
-     * @private
-     */
     public sendWS(data): void {
         if (!this.client.guilds.has(data.d.guild_id)) return;
         // @ts-ignore: support both versions of discord.js

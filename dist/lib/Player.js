@@ -35,7 +35,7 @@ class Player extends events_1.EventEmitter {
                         this.emit("end", data);
                 }
                 case "WebSocketClosedEvent": {
-                    if (this.listenerCount("end"))
+                    if (this.listenerCount("error"))
                         this.emit("error", data);
                 }
                 default: if (this.listenerCount("warn"))
