@@ -26,16 +26,30 @@ export type PlayerManagerJoinOptions = {
     selfdeaf?: boolean
 };
 
-export type VoiceServerUpdateData = {
+export type VoiceServerUpdate = {
     token: string;
     guild_id: string;
     endpoint: string;
+};
+
+export type VoiceStateUpdate = {
+    guild_id: string;
+    channel_id?: string;
+    user_id: string;
+    session_id: string;
+    deaf?: boolean;
+    mute?: boolean;
+    self_deaf?: boolean;
+    self_mute?: boolean;
+    suppress?: boolean;
 };
 
 export class PlayerManager extends EventEmitter {
     public client: Client;
     public nodes = new Collection<string, LavalinkNode>();
     public players = new Collection<string, Player>();
+    public voiceServers = new Collection<string, VoiceServerUpdate>();
+    public voiceStates = new Collection<string, VoiceStateUpdate>();
     public user: string;
     public shards: number;
     private Player: Player;
@@ -52,10 +66,9 @@ export class PlayerManager extends EventEmitter {
 
         for (const node of nodes) this.createNode(node);
 
-        client.on("raw", message => {
-            switch (message.t) {
-                case "VOICE_SERVER_UPDATE": this.voiceServerUpdate(message.d);
-            }
+        client.on("raw", packet => {
+                if (packet.t === "VOICE_SERVER_UPDATE") this.voiceServerUpdate(packet.d);
+                if (packet.t === "VOICE_STATE_UPDATE") this.voiceStateUpdate(packet.d);
         });
     }
 
@@ -74,7 +87,7 @@ export class PlayerManager extends EventEmitter {
         return this.nodes.delete(host);
     }
 
-    public join(data: PlayerManagerJoinData, options: PlayerManagerJoinOptions = { selfdeaf: false, selfmute: false }): Player {
+    public join(data: PlayerManagerJoinData, { selfmute = false, selfdeaf = false }: PlayerManagerJoinOptions = {}): Player {
         const player = this.players.get(data.guild);
         if (player) return player;
         this.sendWS({
@@ -82,8 +95,8 @@ export class PlayerManager extends EventEmitter {
             d: {
                 guild_id: data.guild,
                 channel_id: data.channel,
-                self_mute: options.selfmute,
-                self_deaf: options.selfdeaf
+                self_mute: selfmute,
+                self_deaf: selfdeaf
             }
         });
         return this.spawnPlayer(data);
@@ -108,7 +121,7 @@ export class PlayerManager extends EventEmitter {
 
     public async switch(player: Player, node: LavalinkNode): Promise<Player> {
         const { id, channel, track, state, voiceUpdateState } = ({ ...player } as any);
-        const position = (state.position + 2000) || 0;
+        const position = state.position ? (state.position + 2000) : 2000;
 
         await player.destroy();
 
@@ -122,17 +135,40 @@ export class PlayerManager extends EventEmitter {
         return player;
     }
 
-    public async voiceServerUpdate(data: VoiceServerUpdateData): Promise<void> {
-        const guild = this.client.guilds.get(data.guild_id);
-        if (!guild) return;
-        const player = this.players.get(data.guild_id);
-        if (!player) return;
-        if (!guild.me) await guild.members.fetch(this.client.user.id).catch(() => null);
-        await player.connect({
-            // @ts-ignore: support both versions of discord.js
-            sessionId: guild.me.voice ? guild.me.voice.sessionID : guild.me.voiceSessionID,
-            event: data
-        });
+    public voiceServerUpdate(data: VoiceServerUpdate) {
+        this.voiceServers.set(data.guild_id, data);
+        return this._attemptConnection(data.guild_id);
+    }
+
+    public voiceStateUpdate(data: VoiceStateUpdate) {
+        if (data.user_id !== this.client.user.id) return Promise.resolve(false);
+
+        if (data.channel_id) {
+            this.voiceStates.set(data.guild_id, data);
+            return this._attemptConnection(data.guild_id);
+        }
+
+        this.voiceServers.delete(data.guild_id);
+        this.voiceStates.delete(data.guild_id);
+
+        return Promise.resolve(false);
+    }
+
+    private async _attemptConnection(guildId) {
+        const server = this.voiceServers.get(guildId);
+        const state = this.voiceStates.get(guildId);
+
+        if (!server || !state) return false;
+
+        const guild = this.client.guilds.get(guildId);
+        if (!guild) return false;
+        const player = this.players.get(guildId);
+        if (!player) return false;
+
+        await player.connect({ sessionId: state.session_id, event: server });
+        this.voiceServers.delete(guildId);
+        this.voiceStates.delete(guildId);
+        return true;
     }
 
     private spawnPlayer(data: PlayerManagerJoinData): Player {
@@ -157,9 +193,9 @@ export class PlayerManager extends EventEmitter {
     }
 
     public sendWS(data): void {
-        if (!this.client.guilds.has(data.d.guild_id)) return;
-        // @ts-ignore: support both versions of discord.js
-        return typeof this.client.ws.send === "function" ? this.client.ws.send(data) : this.client.guilds.get(data.d.guild_id).shard.send(data);
+        const guild = this.client.guilds.get(data.d.guild_id);
+        if (!guild) return;
+        return this.client.ws.shards ? this.client.ws.shards.get(guild.shardID).send(data) : (this.client as any).ws(data);
     }
 
 }

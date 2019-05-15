@@ -32,7 +32,7 @@ class LavalinkNode extends events_1.EventEmitter {
     }
     connect() {
         if (this.connected)
-            return;
+            this.ws.close();
         const headers = {
             Authorization: this.password,
             "Num-Shards": String(this.manager.shards || 1),
@@ -41,39 +41,46 @@ class LavalinkNode extends events_1.EventEmitter {
         if (this.resumeKey)
             headers["Resume-Key"] = this.resumeKey;
         this.ws = new WebSocket(this.address, { headers });
-        this.ws
-            .on("open", () => {
-            if (this.reconnect)
-                this.reconnect = null;
-            this.manager.emit("ready", this);
-            this.configureResuming();
-        })
-            .on("close", (code, reason) => {
-            this.manager.emit("disconnect", this, code, reason);
-            if (code !== 1000 || reason !== "destroy")
-                return this._reconnect();
-        }).on("error", (error) => {
-            this.manager.emit("error", this, error);
-            this._reconnect();
-        })
-            .on("message", (data) => {
-            let d;
-            if (Buffer.isBuffer(data))
-                d = data;
-            else if (Array.isArray(data))
-                d = Buffer.concat(data);
-            else if (data instanceof ArrayBuffer)
-                d = Buffer.from(data);
-            else
-                d = data;
-            const msg = JSON.parse(d.toString());
-            if (msg.op && msg.op === "stats")
-                this.stats = { ...msg };
-            delete this.stats.op;
-            if (msg.guildId && this.manager.players.has(msg.guildId))
-                this.manager.players.get(msg.guildId).emit(msg.op, msg);
-            this.manager.emit("raw", this, msg);
-        });
+        this.ws.onopen = this.onOpen.bind(this);
+        this.ws.onmessage = this.onMessage.bind(this);
+        this.ws.onerror = this.onError.bind(this);
+        this.ws.onclose = this.onClose.bind(this);
+    }
+    onOpen() {
+        if (this.reconnect)
+            clearTimeout(this.reconnect);
+        this.manager.emit("ready", this);
+        this.configureResuming();
+    }
+    onMessage({ data }) {
+        let d;
+        if (Buffer.isBuffer(data))
+            d = data;
+        else if (Array.isArray(data))
+            d = Buffer.concat(data);
+        else if (data instanceof ArrayBuffer)
+            d = Buffer.from(data);
+        else
+            d = data;
+        const msg = JSON.parse(d.toString());
+        if (msg.op && msg.op === "stats")
+            this.stats = { ...msg };
+        delete this.stats.op;
+        if (msg.guildId && this.manager.players.has(msg.guildId))
+            this.manager.players.get(msg.guildId).emit(msg.op, msg);
+        this.manager.emit("raw", this, msg);
+    }
+    onError(event) {
+        const error = event && event.error ? event.error : event;
+        if (!error)
+            return;
+        this.manager.emit("error", this, error);
+        this._reconnect();
+    }
+    onClose(event) {
+        this.manager.emit("disconnect", this, event);
+        if (event.code !== 1000 || event.reason !== "destroy")
+            return this._reconnect();
     }
     send(msg) {
         return new Promise((res, rej) => {

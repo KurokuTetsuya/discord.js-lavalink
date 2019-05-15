@@ -19,6 +19,8 @@ class MusicClient extends Client {
                 Player: ExamplePlayer
             });
 
+            this.player.on("ready", node => console.log(`${node.host}: Is ready`));
+            this.player.on("disconnect", (node, event) => console.log(`${node.host}: Disconnected with code ${event.code} and reason ${event.reason}`));
             this.player.on("raw", (node, data) => console.log(node.host, data));
             this.player.on("error", console.error);
 
@@ -39,7 +41,7 @@ client.on("message", async msg => {
         if (!msg.member || !msg.member.voice.channel) return msg.reply("You must be in a voice channel for this command.");
 
         const track = args.join(" ");
-        const [song] = await getSongs(`ytsearch: ${track}`);
+        const [song] = await getSongs(`ytsearch:${track}`);
         if (!song) return msg.reply("No songs found. try again!");
 
         const player = client.player.join({

@@ -43,6 +43,10 @@ export declare class LavalinkNode extends EventEmitter {
     resumeKey?: string;
     constructor(manager: PlayerManager, options: LavalinkNodeOptions);
     private connect;
+    private onOpen;
+    private onMessage;
+    private onError;
+    private onClose;
     send(msg: object): Promise<boolean>;
     configureResuming(key?: string, timeout?: number): Promise<boolean>;
     destroy(): boolean;

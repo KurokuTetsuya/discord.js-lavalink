@@ -9,6 +9,8 @@ class PlayerManager extends events_1.EventEmitter {
         super();
         this.nodes = new discord_js_1.Collection();
         this.players = new discord_js_1.Collection();
+        this.voiceServers = new discord_js_1.Collection();
+        this.voiceStates = new discord_js_1.Collection();
         if (!client)
             throw new Error("INVALID_CLIENT: No client provided.");
         this.client = client;
@@ -17,10 +19,11 @@ class PlayerManager extends events_1.EventEmitter {
         this.Player = options.Player || Player_1.Player;
         for (const node of nodes)
             this.createNode(node);
-        client.on("raw", message => {
-            switch (message.t) {
-                case "VOICE_SERVER_UPDATE": this.voiceServerUpdate(message.d);
-            }
+        client.on("raw", packet => {
+            if (packet.t === "VOICE_SERVER_UPDATE")
+                this.voiceServerUpdate(packet.d);
+            if (packet.t === "VOICE_STATE_UPDATE")
+                this.voiceStateUpdate(packet.d);
         });
     }
     createNode(options) {
@@ -35,7 +38,7 @@ class PlayerManager extends events_1.EventEmitter {
         node.removeAllListeners();
         return this.nodes.delete(host);
     }
-    join(data, options = { selfdeaf: false, selfmute: false }) {
+    join(data, { selfmute = false, selfdeaf = false } = {}) {
         const player = this.players.get(data.guild);
         if (player)
             return player;
@@ -44,8 +47,8 @@ class PlayerManager extends events_1.EventEmitter {
             d: {
                 guild_id: data.guild,
                 channel_id: data.channel,
-                self_mute: options.selfmute,
-                self_deaf: options.selfdeaf
+                self_mute: selfmute,
+                self_deaf: selfdeaf
             }
         });
         return this.spawnPlayer(data);
@@ -69,7 +72,7 @@ class PlayerManager extends events_1.EventEmitter {
     }
     async switch(player, node) {
         const { id, channel, track, state, voiceUpdateState } = { ...player };
-        const position = (state.position + 2000) || 0;
+        const position = state.position ? (state.position + 2000) : 2000;
         await player.destroy();
         player.node = node;
         await player.connect(voiceUpdateState);
@@ -78,19 +81,36 @@ class PlayerManager extends events_1.EventEmitter {
         await player.play(track, { startTime: position });
         return player;
     }
-    async voiceServerUpdate(data) {
-        const guild = this.client.guilds.get(data.guild_id);
+    voiceServerUpdate(data) {
+        this.voiceServers.set(data.guild_id, data);
+        return this._attemptConnection(data.guild_id);
+    }
+    voiceStateUpdate(data) {
+        if (data.user_id !== this.client.user.id)
+            return Promise.resolve(false);
+        if (data.channel_id) {
+            this.voiceStates.set(data.guild_id, data);
+            return this._attemptConnection(data.guild_id);
+        }
+        this.voiceServers.delete(data.guild_id);
+        this.voiceStates.delete(data.guild_id);
+        return Promise.resolve(false);
+    }
+    async _attemptConnection(guildId) {
+        const server = this.voiceServers.get(guildId);
+        const state = this.voiceStates.get(guildId);
+        if (!server || !state)
+            return false;
+        const guild = this.client.guilds.get(guildId);
         if (!guild)
-            return;
-        const player = this.players.get(data.guild_id);
+            return false;
+        const player = this.players.get(guildId);
         if (!player)
-            return;
-        if (!guild.me)
-            await guild.members.fetch(this.client.user.id).catch(() => null);
-        await player.connect({
-            sessionId: guild.me.voice ? guild.me.voice.sessionID : guild.me.voiceSessionID,
-            event: data
-        });
+            return false;
+        await player.connect({ sessionId: state.session_id, event: server });
+        this.voiceServers.delete(guildId);
+        this.voiceStates.delete(guildId);
+        return true;
     }
     spawnPlayer(data) {
         const exists = this.players.get(data.guild);
@@ -114,9 +134,10 @@ class PlayerManager extends events_1.EventEmitter {
         });
     }
     sendWS(data) {
-        if (!this.client.guilds.has(data.d.guild_id))
+        const guild = this.client.guilds.get(data.d.guild_id);
+        if (!guild)
             return;
-        return typeof this.client.ws.send === "function" ? this.client.ws.send(data) : this.client.guilds.get(data.d.guild_id).shard.send(data);
+        return this.client.ws.shards ? this.client.ws.shards.get(guild.shardID).send(data) : this.client.ws(data);
     }
 }
 exports.PlayerManager = PlayerManager;
