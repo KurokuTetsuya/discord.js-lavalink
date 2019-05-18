@@ -195,7 +195,7 @@ export class PlayerManager extends EventEmitter {
     public sendWS(data): void {
         const guild = this.client.guilds.get(data.d.guild_id);
         if (!guild) return;
-        return this.client.ws.shards ? this.client.ws.shards.get(guild.shardID).send(data) : (this.client as any).ws(data);
+        return this.client.ws.shards ? this.client.ws.shards.get(guild.shardID).send(data) : (this.client as any).ws.send(data);
     }
 
 }
