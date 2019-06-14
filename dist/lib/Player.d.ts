@@ -17,6 +17,8 @@ export interface PlayerPlayOptions {
     startTime?: number;
     endTime?: number;
     noReplace?: boolean;
+    pause?: boolean;
+    volume?: number;
 }
 export interface PlayerEqualizerBand {
     band: number;
@@ -38,10 +40,10 @@ export declare class Player extends EventEmitter {
     channel: string;
     state: PlayerState;
     playing: boolean;
-    timestamp?: number;
+    timestamp: number | null;
     paused: boolean;
-    track?: string;
-    voiceUpdateState: {};
+    track: string | null;
+    voiceUpdateState: PlayerUpdateVoiceState | null;
     constructor(node: LavalinkNode, options: PlayerOptions);
     play(track: string, options?: PlayerPlayOptions): Promise<boolean>;
     stop(): Promise<boolean>;

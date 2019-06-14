@@ -4,17 +4,17 @@ const events_1 = require("events");
 class Player extends events_1.EventEmitter {
     constructor(node, options) {
         super();
-        this.state = { volume: 100, equalizer: [] };
-        this.playing = false;
-        this.timestamp = null;
-        this.paused = false;
-        this.track = null;
-        this.voiceUpdateState = {};
         this.client = node.manager.client;
         this.manager = node.manager;
         this.node = node;
         this.id = options.id;
         this.channel = options.channel;
+        this.state = { volume: 100, equalizer: [] };
+        this.playing = false;
+        this.timestamp = null;
+        this.paused = false;
+        this.track = null;
+        this.voiceUpdateState = null;
         this.on("event", data => {
             switch (data.type) {
                 case "TrackEndEvent":
@@ -45,7 +45,7 @@ class Player extends events_1.EventEmitter {
             }
         })
             .on("playerUpdate", data => {
-            this.state = { volume: this.state.volume, ...data.state };
+            this.state = { volume: this.state.volume, equalizer: this.state.equalizer, ...data.state };
         });
     }
     async play(track, options = {}) {

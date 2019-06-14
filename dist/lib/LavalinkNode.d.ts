@@ -1,4 +1,3 @@
-/// <reference types="@types/ws" />
 /// <reference types="node" />
 import * as WebSocket from "ws";
 import { EventEmitter } from "events";
@@ -36,10 +35,9 @@ export declare class LavalinkNode extends EventEmitter {
     port: number | string;
     reconnectInterval: number;
     password: string;
-    private address;
-    ws: WebSocket;
+    ws: WebSocket | null;
     private reconnect?;
-    stats?: LavalinkNodeStats;
+    stats: LavalinkNodeStats;
     resumeKey?: string;
     constructor(manager: PlayerManager, options: LavalinkNodeOptions);
     private connect;

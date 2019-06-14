@@ -1,10 +1,10 @@
-import { Client, Collection } from "discord.js";
-import { Player, PlayerUpdateVoiceState } from "./Player";
-import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
+import { Client, Collection, ClientUser } from "discord.js";
 import { EventEmitter } from "events";
+import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
+import { Player, PlayerUpdateVoiceState } from "./Player";
 
 export interface PlayerManagerOptions {
-    user?: string;
+    user: string;
     shards?: number;
     Player?: Player;
 }
@@ -44,6 +44,13 @@ export interface VoiceStateUpdate {
     suppress?: boolean;
 }
 
+export interface DiscordPacket {
+    op: number;
+    d: any;
+    s?: number;
+    t?: string;
+}
+
 export class PlayerManager extends EventEmitter {
 
     public client: Client;
@@ -55,21 +62,21 @@ export class PlayerManager extends EventEmitter {
     public shards: number;
     private Player: Player;
 
-    public constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions = {}) {
+    public constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions) {
         super();
 
         if (!client) throw new Error("INVALID_CLIENT: No client provided.");
 
         this.client = client;
-        this.user = client.user ? client.user.id : options.user;
+        this.user = options.user;
         this.shards = options.shards || 1;
         this.Player = options.Player as any || Player;
 
         for (const node of nodes) this.createNode(node);
 
-        client.on("raw", packet => {
-            if (packet.t === "VOICE_SERVER_UPDATE") this.voiceServerUpdate(packet.d);
-            if (packet.t === "VOICE_STATE_UPDATE") this.voiceStateUpdate(packet.d);
+        client.on("raw", (packet: DiscordPacket) => {
+            if (packet.t === "VOICE_SERVER_UPDATE") this.voiceServerUpdate(packet.d as VoiceServerUpdate);
+            if (packet.t === "VOICE_STATE_UPDATE") this.voiceStateUpdate(packet.d as VoiceStateUpdate);
         });
     }
 
@@ -129,9 +136,8 @@ export class PlayerManager extends EventEmitter {
         player.node = node;
 
         await player.connect(voiceUpdateState as PlayerUpdateVoiceState);
-        await player.volume(state.volume);
+        await player.play(track, { startTime: position, volume: state.volume });
         await player.equalizer(state.equalizer);
-        await player.play(track, { startTime: position });
 
         return player;
     }
@@ -142,7 +148,7 @@ export class PlayerManager extends EventEmitter {
     }
 
     public voiceStateUpdate(data: VoiceStateUpdate): Promise<boolean> {
-        if (data.user_id !== this.client.user.id) return Promise.resolve(false);
+        if (data.user_id !== (this.client.user as ClientUser).id) return Promise.resolve(false);
 
         if (data.channel_id) {
             this.voiceStates.set(data.guild_id, data);
@@ -155,7 +161,7 @@ export class PlayerManager extends EventEmitter {
         return Promise.resolve(false);
     }
 
-    private async _attemptConnection(guildId): Promise<boolean> {
+    private async _attemptConnection(guildId: string): Promise<boolean> {
         const server = this.voiceServers.get(guildId);
         const state = this.voiceStates.get(guildId);
 
@@ -193,10 +199,10 @@ export class PlayerManager extends EventEmitter {
         });
     }
 
-    public sendWS(data): void {
+    public sendWS(data: DiscordPacket): void {
         const guild = this.client.guilds.get(data.d.guild_id);
         if (!guild) return;
-        return this.client.ws.shards ? this.client.ws.shards.get(guild.shardID).send(data) : (this.client as any).ws.send(data);
+        return this.client.ws.shards ? guild.shard.send(data) : (this.client as any).ws.send(data);
     }
 
 }

@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
-const Player_1 = require("./Player");
-const LavalinkNode_1 = require("./LavalinkNode");
 const events_1 = require("events");
+const LavalinkNode_1 = require("./LavalinkNode");
+const Player_1 = require("./Player");
 class PlayerManager extends events_1.EventEmitter {
-    constructor(client, nodes, options = {}) {
+    constructor(client, nodes, options) {
         super();
         this.nodes = new discord_js_1.Collection();
         this.players = new discord_js_1.Collection();
@@ -14,12 +14,12 @@ class PlayerManager extends events_1.EventEmitter {
         if (!client)
             throw new Error("INVALID_CLIENT: No client provided.");
         this.client = client;
-        this.user = client.user ? client.user.id : options.user;
+        this.user = options.user;
         this.shards = options.shards || 1;
         this.Player = options.Player || Player_1.Player;
         for (const node of nodes)
             this.createNode(node);
-        client.on("raw", packet => {
+        client.on("raw", (packet) => {
             if (packet.t === "VOICE_SERVER_UPDATE")
                 this.voiceServerUpdate(packet.d);
             if (packet.t === "VOICE_STATE_UPDATE")
@@ -76,9 +76,8 @@ class PlayerManager extends events_1.EventEmitter {
         await player.destroy();
         player.node = node;
         await player.connect(voiceUpdateState);
-        await player.volume(state.volume);
+        await player.play(track, { startTime: position, volume: state.volume });
         await player.equalizer(state.equalizer);
-        await player.play(track, { startTime: position });
         return player;
     }
     voiceServerUpdate(data) {
@@ -137,7 +136,7 @@ class PlayerManager extends events_1.EventEmitter {
         const guild = this.client.guilds.get(data.d.guild_id);
         if (!guild)
             return;
-        return this.client.ws.shards ? this.client.ws.shards.get(guild.shardID).send(data) : this.client.ws.send(data);
+        return this.client.ws.shards ? guild.shard.send(data) : this.client.ws.send(data);
     }
 }
 exports.PlayerManager = PlayerManager;

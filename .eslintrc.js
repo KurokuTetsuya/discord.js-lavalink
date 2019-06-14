@@ -18,6 +18,7 @@ module.exports = {
         "@typescript-eslint"
     ],
     rules: {
+        "@typescript-eslint/no-non-null-assertion": "off",
         "@typescript-eslint/camelcase": "off",
         "@typescript-eslint/explicit-function-return-type": ["error", { allowExpressions: true }],
         "@typescript-eslint/interface-name-prefix": 0,
@@ -31,12 +32,12 @@ module.exports = {
         "@typescript-eslint/no-use-before-define": 0,
         "@typescript-eslint/member-delimiter-style": ["error", {
             multiline: {
-                delimiter: "comma",
-                requireLast: false
+                delimiter: "semi",
+                requireLast: true
             },
             singleline: {
-                delimiter: "comma",
-                requireLast: false
+                delimiter: "semi",
+                requireLast: true
             },
             overrides: {
                 interface: {

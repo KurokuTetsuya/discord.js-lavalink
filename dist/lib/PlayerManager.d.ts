@@ -1,10 +1,10 @@
 /// <reference types="node" />
 import { Client, Collection } from "discord.js";
-import { Player } from "./Player";
-import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { EventEmitter } from "events";
+import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
+import { Player } from "./Player";
 export interface PlayerManagerOptions {
-    user?: string;
+    user: string;
     shards?: number;
     Player?: Player;
 }
@@ -38,6 +38,12 @@ export interface VoiceStateUpdate {
     self_mute?: boolean;
     suppress?: boolean;
 }
+export interface DiscordPacket {
+    op: number;
+    d: any;
+    s?: number;
+    t?: string;
+}
 export declare class PlayerManager extends EventEmitter {
     client: Client;
     nodes: Collection<string, LavalinkNode>;
@@ -47,7 +53,7 @@ export declare class PlayerManager extends EventEmitter {
     user: string;
     shards: number;
     private Player;
-    constructor(client: Client, nodes: LavalinkNodeOptions[], options?: PlayerManagerOptions);
+    constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions);
     createNode(options: LavalinkNodeOptions): LavalinkNode;
     removeNode(host: string): boolean;
     join(data: PlayerManagerJoinData, { selfmute, selfdeaf }?: PlayerManagerJoinOptions): Player;
@@ -58,5 +64,5 @@ export declare class PlayerManager extends EventEmitter {
     private _attemptConnection;
     private spawnPlayer;
     readonly idealNodes: Collection<string, LavalinkNode>;
-    sendWS(data: any): void;
+    sendWS(data: DiscordPacket): void;
 }

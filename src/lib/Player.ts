@@ -19,6 +19,8 @@ export interface PlayerPlayOptions {
     startTime?: number;
     endTime?: number;
     noReplace?: boolean;
+    pause?: boolean;
+    volume?: number;
 }
 
 export interface PlayerEqualizerBand {
@@ -29,9 +31,9 @@ export interface PlayerEqualizerBand {
 export interface PlayerUpdateVoiceState {
     sessionId: string;
     event: {
-        token: string,
-        guild_id: string,
-        endpoint: string
+        token: string;
+        guild_id: string;
+        endpoint: string;
     };
 }
 
@@ -42,12 +44,12 @@ export class Player extends EventEmitter {
     public node: LavalinkNode;
     public id: string;
     public channel: string;
-    public state: PlayerState = { volume: 100, equalizer: [] };
-    public playing: boolean = false;
-    public timestamp?: number = null;
-    public paused: boolean = false;
-    public track?: string = null;
-    public voiceUpdateState = {};
+    public state: PlayerState;
+    public playing: boolean;
+    public timestamp: number | null;
+    public paused: boolean;
+    public track: string | null;
+    public voiceUpdateState: PlayerUpdateVoiceState | null;
 
     public constructor(node: LavalinkNode, options: PlayerOptions) {
         super();
@@ -58,6 +60,13 @@ export class Player extends EventEmitter {
 
         this.id = options.id;
         this.channel = options.channel;
+
+        this.state = { volume: 100, equalizer: [] };
+        this.playing = false;
+        this.timestamp = null;
+        this.paused = false;
+        this.track = null;
+        this.voiceUpdateState = null;
 
         this.on("event", data => {
             switch (data.type) {
@@ -83,7 +92,7 @@ export class Player extends EventEmitter {
             }
         })
             .on("playerUpdate", data => {
-                this.state = { volume: this.state.volume, ...data.state };
+                this.state = { volume: this.state.volume, equalizer: this.state.equalizer, ...data.state };
             });
     }
 

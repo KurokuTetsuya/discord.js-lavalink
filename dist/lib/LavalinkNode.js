@@ -9,8 +9,7 @@ class LavalinkNode extends events_1.EventEmitter {
         this.host = options.host;
         this.port = options.port || 2333;
         this.reconnectInterval = options.reconnectInterval || 5000;
-        Object.defineProperty(this, "password", { value: options.password || "youshallnotpass" });
-        Object.defineProperty(this, "address", { value: `ws://${this.host}:${this.port}` });
+        this.password = options.password || "youshallnotpass";
         this.ws = null;
         this.stats = {
             players: 0,
@@ -40,7 +39,7 @@ class LavalinkNode extends events_1.EventEmitter {
         };
         if (this.resumeKey)
             headers["Resume-Key"] = this.resumeKey;
-        this.ws = new WebSocket(this.address, { headers });
+        this.ws = new WebSocket(`ws://${this.host}:${this.port}`, { headers });
         this.ws.onopen = this.onOpen.bind(this);
         this.ws.onmessage = this.onMessage.bind(this);
         this.ws.onerror = this.onError.bind(this);
@@ -95,7 +94,7 @@ class LavalinkNode extends events_1.EventEmitter {
             });
         });
     }
-    configureResuming(key = this.manager.user, timeout = 120) {
+    configureResuming(key = `${this.manager.user}`, timeout = 120) {
         this.resumeKey = key;
         return this.send({ op: "configureResuming", key, timeout });
     }
@@ -115,7 +114,9 @@ class LavalinkNode extends events_1.EventEmitter {
         }, this.reconnectInterval);
     }
     get connected() {
-        return this.ws && this.ws.readyState === WebSocket.OPEN;
+        if (!this.ws)
+            return false;
+        return this.ws.readyState === WebSocket.OPEN;
     }
 }
 exports.LavalinkNode = LavalinkNode;
