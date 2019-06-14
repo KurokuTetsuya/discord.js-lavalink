@@ -71,8 +71,8 @@ class PlayerManager extends events_1.EventEmitter {
         return this.players.delete(guild);
     }
     async switch(player, node) {
-        const { id, channel, track, state, voiceUpdateState } = { ...player };
-        const position = state.position ? (state.position + 2000) : 2000;
+        const { track, state, voiceUpdateState } = { ...player };
+        const position = state.position ? state.position + 2000 : 2000;
         await player.destroy();
         player.node = node;
         await player.connect(voiceUpdateState);
@@ -128,8 +128,8 @@ class PlayerManager extends events_1.EventEmitter {
     }
     get idealNodes() {
         return this.nodes.filter(node => node.connected).sort((a, b) => {
-            const aload = a.stats.cpu ? (a.stats.cpu.systemLoad / a.stats.cpu.cores) * 100 : 0;
-            const bload = b.stats.cpu ? (b.stats.cpu.systemLoad / b.stats.cpu.cores) * 100 : 0;
+            const aload = a.stats.cpu ? a.stats.cpu.systemLoad / a.stats.cpu.cores * 100 : 0;
+            const bload = b.stats.cpu ? b.stats.cpu.systemLoad / b.stats.cpu.cores * 100 : 0;
             return aload - bload;
         });
     }

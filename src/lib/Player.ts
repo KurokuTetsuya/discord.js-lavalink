@@ -3,39 +3,40 @@ import { PlayerManager } from "./PlayerManager";
 import { LavalinkNode } from "./LavalinkNode";
 import { Client } from "discord.js";
 
-export type PlayerOptions = {
+export interface PlayerOptions {
     id: string;
-    channel: string
-};
+    channel: string;
+}
 
-export type PlayerState = {
+export interface PlayerState {
     time?: number;
     position?: number;
     volume: number;
-    equalizer: PlayerEqualizerBands;
-};
+    equalizer: PlayerEqualizerBand[];
+}
 
-export type PlayerPlayOptions = {
+export interface PlayerPlayOptions {
     startTime?: number;
     endTime?: number;
     noReplace?: boolean;
-};
+}
 
-export type PlayerEqualizerBands = {
+export interface PlayerEqualizerBand {
     band: number;
     gain: number;
-}[];
+}
 
-export type PlayerUpdateVoiceState = {
+export interface PlayerUpdateVoiceState {
     sessionId: string;
     event: {
-        token: string;
-        guild_id: string;
-        endpoint: string;
+        token: string,
+        guild_id: string,
+        endpoint: string
     };
-};
+}
 
 export class Player extends EventEmitter {
+
     public client: Client;
     public manager: PlayerManager;
     public node: LavalinkNode;
@@ -81,9 +82,9 @@ export class Player extends EventEmitter {
                     break;
             }
         })
-        .on("playerUpdate", data => {
-            this.state = { volume: this.state.volume, ...data.state };
-        });
+            .on("playerUpdate", data => {
+                this.state = { volume: this.state.volume, ...data.state };
+            });
     }
 
     public async play(track: string, options: PlayerPlayOptions = {}): Promise<boolean> {
@@ -121,7 +122,7 @@ export class Player extends EventEmitter {
         return this.send("seek", { position });
     }
 
-    public async equalizer(bands: PlayerEqualizerBands): Promise<boolean> {
+    public async equalizer(bands: PlayerEqualizerBand[]): Promise<boolean> {
         const d = await this.send("equalizer", { bands });
         this.state.equalizer = bands;
         return d;
@@ -144,4 +145,5 @@ export class Player extends EventEmitter {
             guildId: this.id
         });
     }
+
 }

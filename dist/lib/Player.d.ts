@@ -3,33 +3,33 @@ import { EventEmitter } from "events";
 import { PlayerManager } from "./PlayerManager";
 import { LavalinkNode } from "./LavalinkNode";
 import { Client } from "discord.js";
-export declare type PlayerOptions = {
+export interface PlayerOptions {
     id: string;
     channel: string;
-};
-export declare type PlayerState = {
+}
+export interface PlayerState {
     time?: number;
     position?: number;
     volume: number;
-    equalizer: PlayerEqualizerBands;
-};
-export declare type PlayerPlayOptions = {
+    equalizer: PlayerEqualizerBand[];
+}
+export interface PlayerPlayOptions {
     startTime?: number;
     endTime?: number;
     noReplace?: boolean;
-};
-export declare type PlayerEqualizerBands = {
+}
+export interface PlayerEqualizerBand {
     band: number;
     gain: number;
-}[];
-export declare type PlayerUpdateVoiceState = {
+}
+export interface PlayerUpdateVoiceState {
     sessionId: string;
     event: {
         token: string;
         guild_id: string;
         endpoint: string;
     };
-};
+}
 export declare class Player extends EventEmitter {
     client: Client;
     manager: PlayerManager;
@@ -49,7 +49,7 @@ export declare class Player extends EventEmitter {
     resume(): Promise<boolean>;
     volume(volume: number): Promise<boolean>;
     seek(position: number): Promise<boolean>;
-    equalizer(bands: PlayerEqualizerBands): Promise<boolean>;
+    equalizer(bands: PlayerEqualizerBand[]): Promise<boolean>;
     destroy(): Promise<boolean>;
     connect(data: PlayerUpdateVoiceState): Promise<boolean>;
     private send;

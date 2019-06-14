@@ -27,6 +27,6 @@
 		"scripts"
 	],
 	"include": [
-		"./src/**/*"
+		"src"
 	]
 }

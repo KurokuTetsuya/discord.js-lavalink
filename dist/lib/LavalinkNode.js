@@ -20,12 +20,12 @@ class LavalinkNode extends events_1.EventEmitter {
                 free: 0,
                 used: 0,
                 allocated: 0,
-                reservable: 0,
+                reservable: 0
             },
             cpu: {
                 cores: 0,
                 systemLoad: 0,
-                lavalinkLoad: 0,
+                lavalinkLoad: 0
             }
         };
         this.connect();

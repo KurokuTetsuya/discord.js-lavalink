@@ -3,31 +3,31 @@ import { Client, Collection } from "discord.js";
 import { Player } from "./Player";
 import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { EventEmitter } from "events";
-export declare type PlayerManagerOptions = {
+export interface PlayerManagerOptions {
     user?: string;
     shards?: number;
     Player?: Player;
-};
-export declare type PlayerManagerNodes = {
+}
+export interface PlayerManagerNodes {
     host: string;
     port?: number | string;
     password?: string;
-};
-export declare type PlayerManagerJoinData = {
+}
+export interface PlayerManagerJoinData {
     guild: string;
     channel: string;
     host: string;
-};
-export declare type PlayerManagerJoinOptions = {
+}
+export interface PlayerManagerJoinOptions {
     selfmute?: boolean;
     selfdeaf?: boolean;
-};
-export declare type VoiceServerUpdate = {
+}
+export interface VoiceServerUpdate {
     token: string;
     guild_id: string;
     endpoint: string;
-};
-export declare type VoiceStateUpdate = {
+}
+export interface VoiceStateUpdate {
     guild_id: string;
     channel_id?: string;
     user_id: string;
@@ -37,7 +37,7 @@ export declare type VoiceStateUpdate = {
     self_deaf?: boolean;
     self_mute?: boolean;
     suppress?: boolean;
-};
+}
 export declare class PlayerManager extends EventEmitter {
     client: Client;
     nodes: Collection<string, LavalinkNode>;

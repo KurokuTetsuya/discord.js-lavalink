@@ -3,13 +3,13 @@
 import * as WebSocket from "ws";
 import { EventEmitter } from "events";
 import { PlayerManager } from "./PlayerManager";
-export declare type LavalinkNodeOptions = {
+export interface LavalinkNodeOptions {
     host: string;
     port: number | string;
     password?: string;
     reconnectInterval?: number;
-};
-export declare type LavalinkNodeStats = {
+}
+export interface LavalinkNodeStats {
     players: number;
     playingPlayers: number;
     uptime: number;
@@ -29,7 +29,7 @@ export declare type LavalinkNodeStats = {
         nulled?: number;
         deficit?: number;
     };
-};
+}
 export declare class LavalinkNode extends EventEmitter {
     manager: PlayerManager;
     host: string;

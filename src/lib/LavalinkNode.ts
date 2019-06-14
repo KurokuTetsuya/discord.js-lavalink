@@ -2,36 +2,37 @@ import * as WebSocket from "ws";
 import { EventEmitter } from "events";
 import { PlayerManager } from "./PlayerManager";
 
-export type LavalinkNodeOptions = {
+export interface LavalinkNodeOptions {
     host: string;
     port: number | string;
     password?: string;
     reconnectInterval?: number;
-};
+}
 
-export type LavalinkNodeStats = {
+export interface LavalinkNodeStats {
     players: number;
     playingPlayers: number;
     uptime: number;
     memory: {
-        free: number;
-        used: number;
-        allocated: number;
-        reservable: number;
+        free: number,
+        used: number,
+        allocated: number,
+        reservable: number
     };
     cpu: {
-        cores: number;
-        systemLoad: number;
-        lavalinkLoad: number;
+        cores: number,
+        systemLoad: number,
+        lavalinkLoad: number
     };
     frameStats?: {
-        sent?: number;
-        nulled?: number;
-        deficit?: number;
-    }
-};
+        sent?: number,
+        nulled?: number,
+        deficit?: number
+    };
+}
 
 export class LavalinkNode extends EventEmitter {
+
     public manager: PlayerManager;
     public host: string;
     public port: number | string;
@@ -63,12 +64,12 @@ export class LavalinkNode extends EventEmitter {
                 free: 0,
                 used: 0,
                 allocated: 0,
-                reservable: 0,
+                reservable: 0
             },
             cpu: {
                 cores: 0,
                 systemLoad: 0,
-                lavalinkLoad: 0,
+                lavalinkLoad: 0
             }
         };
 
@@ -94,13 +95,13 @@ export class LavalinkNode extends EventEmitter {
         this.ws.onclose = this.onClose.bind(this);
     }
 
-    private onOpen() {
+    private onOpen(): void {
         if (this.reconnect) clearTimeout(this.reconnect);
         this.manager.emit("ready", this);
         this.configureResuming();
     }
 
-    private onMessage({ data }: { data: WebSocket.Data }) {
+    private onMessage({ data }: { data: WebSocket.Data }): void {
         let d: Buffer | string;
 
         if (Buffer.isBuffer(data)) d = data;
@@ -118,7 +119,7 @@ export class LavalinkNode extends EventEmitter {
         this.manager.emit("raw", this, msg);
     }
 
-    private onError(event) {
+    private onError(event): void {
         const error = event && event.error ? event.error : event;
         if (!error) return;
 
@@ -126,7 +127,7 @@ export class LavalinkNode extends EventEmitter {
         this._reconnect();
     }
 
-    private onClose(event) {
+    private onClose(event): void {
         this.manager.emit("disconnect", this, event);
         if (event.code !== 1000 || event.reason !== "destroy") return this._reconnect();
     }
