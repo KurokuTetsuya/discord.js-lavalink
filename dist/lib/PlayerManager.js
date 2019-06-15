@@ -35,7 +35,6 @@ class PlayerManager extends events_1.EventEmitter {
         const node = this.nodes.get(host);
         if (!node)
             return false;
-        node.removeAllListeners();
         return this.nodes.delete(host);
     }
     join(data, { selfmute = false, selfdeaf = false } = {}) {

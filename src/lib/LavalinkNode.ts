@@ -1,5 +1,4 @@
 import * as WebSocket from "ws";
-import { EventEmitter } from "events";
 import { PlayerManager } from "./PlayerManager";
 import { Player } from "./Player";
 
@@ -32,7 +31,7 @@ export interface LavalinkNodeStats {
     };
 }
 
-export class LavalinkNode extends EventEmitter {
+export class LavalinkNode {
 
     public manager: PlayerManager;
     public host: string;
@@ -45,8 +44,6 @@ export class LavalinkNode extends EventEmitter {
     public resumeKey?: string;
 
     public constructor(manager: PlayerManager, options: LavalinkNodeOptions) {
-        super();
-
         this.manager = manager;
         this.host = options.host;
         this.port = options.port || 2333;

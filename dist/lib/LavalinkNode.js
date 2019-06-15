@@ -1,10 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const WebSocket = require("ws");
-const events_1 = require("events");
-class LavalinkNode extends events_1.EventEmitter {
+class LavalinkNode {
     constructor(manager, options) {
-        super();
         this.manager = manager;
         this.host = options.host;
         this.port = options.port || 2333;

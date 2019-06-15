@@ -91,7 +91,6 @@ export class PlayerManager extends EventEmitter {
     public removeNode(host: string): boolean {
         const node = this.nodes.get(host);
         if (!node) return false;
-        node.removeAllListeners();
         return this.nodes.delete(host);
     }
 

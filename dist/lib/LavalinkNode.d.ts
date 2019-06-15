@@ -1,6 +1,4 @@
-/// <reference types="node" />
 import * as WebSocket from "ws";
-import { EventEmitter } from "events";
 import { PlayerManager } from "./PlayerManager";
 export interface LavalinkNodeOptions {
     host: string;
@@ -29,7 +27,7 @@ export interface LavalinkNodeStats {
         deficit?: number;
     };
 }
-export declare class LavalinkNode extends EventEmitter {
+export declare class LavalinkNode {
     manager: PlayerManager;
     host: string;
     port: number | string;
