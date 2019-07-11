@@ -73,7 +73,10 @@ export class LavalinkNode {
     }
 
     private connect(): void {
-        if (this.connected) this.ws!.close();
+        if (this.connected) {
+            this.ws!.removeAllListeners();
+            this.ws!.close();
+        }
 
         const headers = {
             Authorization: this.password,
@@ -83,12 +86,12 @@ export class LavalinkNode {
 
         if (this.resumeKey) (headers as any)["Resume-Key"] = this.resumeKey;
 
-        this.ws = new WebSocket(`ws://${this.host}:${this.port}`, { headers });
+        this.ws = new WebSocket(`ws://${this.host}:${this.port}/`, { headers });
 
-        this.ws.onopen = this.onOpen.bind(this);
-        this.ws.onmessage = this.onMessage.bind(this);
-        this.ws.onerror = this.onError.bind(this);
-        this.ws.onclose = this.onClose.bind(this);
+        this.ws.on("open", this.onOpen.bind(this));
+        this.ws.on("message", this.onMessage.bind(this));
+        this.ws.on("error", this.onError.bind(this));
+        this.ws.on("close", this.onClose.bind(this));
     }
 
     private onOpen(): void {
@@ -149,6 +152,7 @@ export class LavalinkNode {
     public destroy(): boolean {
         if (!this.connected) return false;
         this.ws!.close(1000, "destroy");
+        this.ws!.removeAllListeners();
         this.ws = null;
         return true;
     }

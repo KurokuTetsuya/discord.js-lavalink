@@ -20,9 +20,9 @@ class MusicClient extends Client {
             });
 
             this.player.on("ready", node => console.log(`${node.host}: Is ready`));
-            this.player.on("disconnect", (node, event) => console.log(`${node.host}: Disconnected with code ${event.code} and reason ${event.reason}`));
+            this.player.on("disconnect", (node, event) => console.log(`${node.host}: Disconnected with code ${event.code} and reason ${event.reason || "No Reason Specified"}`));
             this.player.on("raw", (node, data) => console.log(node.host, data));
-            this.player.on("error", console.error);
+            this.player.on("error", (node, error) => console.error(node.host, error));
 
             console.log("Bot is online!");
         }).on("error", console.error).on("warn", console.warn);
@@ -93,7 +93,7 @@ client.on("message", async msg => {
 });
 
 async function clean(text) {
-    if (text instanceof Promise || (Boolean(text) && typeof text.then === "function" && typeof text.catch === "function")) text = await text;
+    if (text instanceof Promise) text = await text;
     if (typeof text !== "string") text = inspect(text, { depth: 1, showHidden: false });
     text = text.replace(/`/g, `\`${String.fromCharCode(8203)}`).replace(/@/g, `@${String.fromCharCode(8203)}`);
     return text;
