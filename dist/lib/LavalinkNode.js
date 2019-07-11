@@ -51,16 +51,11 @@ class LavalinkNode {
         this.manager.emit("ready", this);
         this.configureResuming();
     }
-    onMessage({ data }) {
-        let d;
-        if (Buffer.isBuffer(data))
-            d = data;
-        else if (Array.isArray(data))
-            d = Buffer.concat(data);
-        else if (data instanceof ArrayBuffer)
-            d = Buffer.from(data);
-        else
-            d = data;
+    onMessage(d) {
+        if (Array.isArray(d))
+            d = Buffer.concat(d);
+        else if (d instanceof ArrayBuffer)
+            d = Buffer.from(d);
         const msg = JSON.parse(d.toString());
         if (msg.op && msg.op === "stats")
             this.stats = { ...msg };
@@ -69,16 +64,15 @@ class LavalinkNode {
             this.manager.players.get(msg.guildId).emit(msg.op, msg);
         this.manager.emit("raw", this, msg);
     }
-    onError(event) {
-        const error = event && event.error ? event.error : event;
+    onError(error) {
         if (!error)
             return;
         this.manager.emit("error", this, error);
         this._reconnect();
     }
-    onClose(event) {
-        this.manager.emit("disconnect", this, event);
-        if (event.code !== 1000 || event.reason !== "destroy")
+    onClose(code, reason) {
+        this.manager.emit("disconnect", this, { code, reason });
+        if (code !== 1000 || reason !== "destroy")
             return this._reconnect();
     }
     send(msg) {

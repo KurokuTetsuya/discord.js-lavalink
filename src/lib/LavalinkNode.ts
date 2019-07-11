@@ -100,13 +100,9 @@ export class LavalinkNode {
         this.configureResuming();
     }
 
-    private onMessage({ data }: { data: WebSocket.Data; }): void {
-        let d: Buffer | string;
-
-        if (Buffer.isBuffer(data)) d = data;
-        else if (Array.isArray(data)) d = Buffer.concat(data);
-        else if (data instanceof ArrayBuffer) d = Buffer.from(data);
-        else d = data;
+    private onMessage(d: Buffer | string): void {
+        if (Array.isArray(d)) d = Buffer.concat(d);
+        else if (d instanceof ArrayBuffer) d = Buffer.from(d);
 
         const msg = JSON.parse(d.toString());
 
@@ -118,17 +114,16 @@ export class LavalinkNode {
         this.manager.emit("raw", this, msg);
     }
 
-    private onError(event: { error: any; message: string; type: string; target: WebSocket; }): void {
-        const error = event && event.error ? event.error : event;
+    private onError(error: Error): void {
         if (!error) return;
 
         this.manager.emit("error", this, error);
         this._reconnect();
     }
 
-    private onClose(event: { wasClean: boolean; code: number; reason: string; target: WebSocket; }): void {
-        this.manager.emit("disconnect", this, event);
-        if (event.code !== 1000 || event.reason !== "destroy") return this._reconnect();
+    private onClose(code: number, reason: string): void {
+        this.manager.emit("disconnect", this, { code, reason });
+        if (code !== 1000 || reason !== "destroy") return this._reconnect();
     }
 
     public send(msg: object): Promise<boolean> {
