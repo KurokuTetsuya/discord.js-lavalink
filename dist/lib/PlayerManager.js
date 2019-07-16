@@ -19,12 +19,18 @@ class PlayerManager extends events_1.EventEmitter {
         this.Player = options.Player || Player_1.Player;
         for (const node of nodes)
             this.createNode(node);
-        client.on("raw", (packet) => {
-            if (packet.t === "VOICE_SERVER_UPDATE")
-                this.voiceServerUpdate(packet.d);
-            if (packet.t === "VOICE_STATE_UPDATE")
-                this.voiceStateUpdate(packet.d);
-        });
+        if (discord_js_1.version === "12.0.0-dev") {
+            client.ws.on("VOICE_SERVER_UPDATE", this.voiceServerUpdate.bind(this));
+            client.ws.on("VOICE_STATE_UPDATE", this.voiceStateUpdate.bind(this));
+        }
+        else {
+            client.on("raw", (packet) => {
+                if (packet.t === "VOICE_SERVER_UPDATE")
+                    this.voiceServerUpdate(packet.d);
+                if (packet.t === "VOICE_STATE_UPDATE")
+                    this.voiceStateUpdate(packet.d);
+            });
+        }
     }
     createNode(options) {
         const node = new LavalinkNode_1.LavalinkNode(this, options);

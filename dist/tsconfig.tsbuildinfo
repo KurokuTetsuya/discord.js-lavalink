@@ -322,7 +322,7 @@
         "signature": "7875d9e05cbe8f318b9c8165d193a90867f89acb792564829e8e6d37aaa175b6"
       },
       "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/lib/PlayerManager.ts": {
-        "version": "58c17e053b1c81143d543e04d36badd3d715df70d91b8cc32823756a94f38d5d",
+        "version": "89dece54aadfdf909c20bcc1037aecd52cdb65aa4364148cf2faaa838840c2a9",
         "signature": "4d3ac2b05f89a62ec6ae42f6bf3a28b8cc3b7276f209372b700b5308fee8eead"
       },
       "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/lib/LavalinkNode.ts": {
@@ -1332,9 +1332,9 @@
       "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/node_modules/@types/ws/index.d.ts",
       "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/node_modules/discord.js/typings/index.d.ts",
       "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/lib/Player.ts",
-      "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/lib/PlayerManager.ts",
+      "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/lib/LavalinkNode.ts",
       "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/index.ts",
-      "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/lib/LavalinkNode.ts"
+      "/mnt/c/Users/JAck/Desktop/Repositories/discord.js-lavalink/src/lib/PlayerManager.ts"
     ]
   },
   "version": "3.5.2"
