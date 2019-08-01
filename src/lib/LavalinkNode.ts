@@ -3,6 +3,7 @@ import { PlayerManager } from "./PlayerManager";
 import { Player } from "./Player";
 
 export interface LavalinkNodeOptions {
+    tag?: string;
     host: string;
     port: number | string;
     password?: string;
@@ -34,6 +35,7 @@ export interface LavalinkNodeStats {
 export class LavalinkNode {
 
     public manager: PlayerManager;
+    public tag?: string;
     public host: string;
     public port: number | string;
     public reconnectInterval: number;
@@ -45,6 +47,8 @@ export class LavalinkNode {
 
     public constructor(manager: PlayerManager, options: LavalinkNodeOptions) {
         this.manager = manager;
+
+        this.tag = options.tag;
         this.host = options.host;
         this.port = options.port || 2333;
         this.reconnectInterval = options.reconnectInterval || 5000;

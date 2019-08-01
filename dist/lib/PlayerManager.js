@@ -34,14 +34,14 @@ class PlayerManager extends events_1.EventEmitter {
     }
     createNode(options) {
         const node = new LavalinkNode_1.LavalinkNode(this, options);
-        this.nodes.set(options.host, node);
+        this.nodes.set(options.tag || options.host, node);
         return node;
     }
-    removeNode(host) {
-        const node = this.nodes.get(host);
+    removeNode(id) {
+        const node = this.nodes.get(id);
         if (!node)
             return false;
-        return this.nodes.delete(host);
+        return this.nodes.delete(id);
     }
     join(data, { selfmute = false, selfdeaf = false } = {}) {
         const player = this.players.get(data.guild);

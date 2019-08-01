@@ -4,6 +4,7 @@ const WebSocket = require("ws");
 class LavalinkNode {
     constructor(manager, options) {
         this.manager = manager;
+        this.tag = options.tag;
         this.host = options.host;
         this.port = options.port || 2333;
         this.reconnectInterval = options.reconnectInterval || 5000;

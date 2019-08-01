@@ -1,6 +1,7 @@
 import * as WebSocket from "ws";
 import { PlayerManager } from "./PlayerManager";
 export interface LavalinkNodeOptions {
+    tag?: string;
     host: string;
     port: number | string;
     password?: string;
@@ -29,6 +30,7 @@ export interface LavalinkNodeStats {
 }
 export declare class LavalinkNode {
     manager: PlayerManager;
+    tag?: string;
     host: string;
     port: number | string;
     reconnectInterval: number;

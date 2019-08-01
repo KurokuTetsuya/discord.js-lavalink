@@ -9,12 +9,6 @@ export interface PlayerManagerOptions {
     Player?: Player;
 }
 
-export interface PlayerManagerNodes {
-    host: string;
-    port?: number | string;
-    password?: string;
-}
-
 export interface PlayerManagerJoinData {
     guild: string;
     channel: string;
@@ -88,15 +82,15 @@ export class PlayerManager extends EventEmitter {
     public createNode(options: LavalinkNodeOptions): LavalinkNode {
         const node = new LavalinkNode(this, options);
 
-        this.nodes.set(options.host, node);
+        this.nodes.set(options.tag || options.host, node);
 
         return node;
     }
 
-    public removeNode(host: string): boolean {
-        const node = this.nodes.get(host);
+    public removeNode(id: string): boolean {
+        const node = this.nodes.get(id);
         if (!node) return false;
-        return this.nodes.delete(host);
+        return this.nodes.delete(id);
     }
 
     public join(data: PlayerManagerJoinData, { selfmute = false, selfdeaf = false }: PlayerManagerJoinOptions = {}): Player {

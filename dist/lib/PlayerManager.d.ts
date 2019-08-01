@@ -8,11 +8,6 @@ export interface PlayerManagerOptions {
     shards?: number;
     Player?: Player;
 }
-export interface PlayerManagerNodes {
-    host: string;
-    port?: number | string;
-    password?: string;
-}
 export interface PlayerManagerJoinData {
     guild: string;
     channel: string;
@@ -55,7 +50,7 @@ export declare class PlayerManager extends EventEmitter {
     private Player;
     constructor(client: Client, nodes: LavalinkNodeOptions[], options: PlayerManagerOptions);
     createNode(options: LavalinkNodeOptions): LavalinkNode;
-    removeNode(host: string): boolean;
+    removeNode(id: string): boolean;
     join(data: PlayerManagerJoinData, { selfmute, selfdeaf }?: PlayerManagerJoinOptions): Player;
     leave(guild: string): Promise<boolean>;
     switch(player: Player, node: LavalinkNode): Promise<Player>;
