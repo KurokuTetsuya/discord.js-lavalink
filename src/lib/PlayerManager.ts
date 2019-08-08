@@ -1,4 +1,4 @@
-import { Client, Collection, ClientUser, version } from "discord.js";
+import { Client, Collection, ClientUser } from "discord.js";
 import { EventEmitter } from "events";
 import { LavalinkNode, LavalinkNodeOptions } from "./LavalinkNode";
 import { Player, PlayerUpdateVoiceState } from "./Player";
@@ -68,15 +68,10 @@ export class PlayerManager extends EventEmitter {
 
         for (const node of nodes) this.createNode(node);
 
-        if (version === "12.0.0-dev") {
-            client.ws.on("VOICE_SERVER_UPDATE", this.voiceServerUpdate.bind(this));
-            client.ws.on("VOICE_STATE_UPDATE", this.voiceStateUpdate.bind(this));
-        } else {
-            client.on("raw", (packet: DiscordPacket) => {
-                if (packet.t === "VOICE_SERVER_UPDATE") this.voiceServerUpdate(packet.d as VoiceServerUpdate);
-                if (packet.t === "VOICE_STATE_UPDATE") this.voiceStateUpdate(packet.d as VoiceStateUpdate);
-            });
-        }
+        client.on("raw", (packet: DiscordPacket) => {
+            if (packet.t === "VOICE_SERVER_UPDATE") this.voiceServerUpdate(packet.d as VoiceServerUpdate);
+            if (packet.t === "VOICE_STATE_UPDATE") this.voiceStateUpdate(packet.d as VoiceStateUpdate);
+        });
     }
 
     public createNode(options: LavalinkNodeOptions): LavalinkNode {
