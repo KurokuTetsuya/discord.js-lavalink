@@ -44,9 +44,6 @@ class PlayerManager extends events_1.EventEmitter {
         return this.nodes.delete(id);
     }
     join(data, { selfmute = false, selfdeaf = false } = {}) {
-        const player = this.players.get(data.guild);
-        if (player)
-            return player;
         this.sendWS({
             op: 4,
             d: {
@@ -56,6 +53,9 @@ class PlayerManager extends events_1.EventEmitter {
                 self_deaf: selfdeaf
             }
         });
+        const player = this.players.get(data.guild);
+        if (player)
+            return player;
         return this.spawnPlayer(data);
     }
     async leave(guild) {

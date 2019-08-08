@@ -94,8 +94,6 @@ export class PlayerManager extends EventEmitter {
     }
 
     public join(data: PlayerManagerJoinData, { selfmute = false, selfdeaf = false }: PlayerManagerJoinOptions = {}): Player {
-        const player = this.players.get(data.guild);
-        if (player) return player;
         this.sendWS({
             op: 4,
             d: {
@@ -105,6 +103,8 @@ export class PlayerManager extends EventEmitter {
                 self_deaf: selfdeaf
             }
         });
+        const player = this.players.get(data.guild);
+        if (player) return player;
         return this.spawnPlayer(data);
     }
 
