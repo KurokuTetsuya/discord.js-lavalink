@@ -47,7 +47,7 @@ export declare class Player extends EventEmitter {
     constructor(node: LavalinkNode, options: PlayerOptions);
     play(track: string, options?: PlayerPlayOptions): Promise<boolean>;
     stop(): Promise<boolean>;
-    pause(pause?: boolean): Promise<boolean>;
+    pause(pause: boolean): Promise<boolean>;
     resume(): Promise<boolean>;
     volume(volume: number): Promise<boolean>;
     seek(position: number): Promise<boolean>;

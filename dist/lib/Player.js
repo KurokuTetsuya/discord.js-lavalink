@@ -61,7 +61,7 @@ class Player extends events_1.EventEmitter {
         this.timestamp = null;
         return d;
     }
-    async pause(pause = true) {
+    async pause(pause) {
         const d = await this.send("pause", { pause });
         this.paused = pause;
         return d;

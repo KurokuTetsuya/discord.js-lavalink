@@ -158,14 +158,14 @@ export class PlayerManager extends EventEmitter {
         const server = this.voiceServers.get(guildId);
         const state = this.voiceStates.get(guildId);
 
-        if (!server || !state) return false;
+        if (!server) return false;
 
         const guild = this.client.guilds.get(guildId);
         if (!guild) return false;
         const player = this.players.get(guildId);
         if (!player) return false;
 
-        await player.connect({ sessionId: state.session_id, event: server });
+        await player.connect({ sessionId: state ? state.session_id : player.voiceUpdateState!.sessionId, event: server });
         this.voiceServers.delete(guildId);
         this.voiceStates.delete(guildId);
         return true;
