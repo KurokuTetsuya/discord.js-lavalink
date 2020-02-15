@@ -182,7 +182,7 @@ class PlayerManager extends Collection {
      * @private
      */
     async voiceServerUpdate(data) {
-        const guild = this.client.guilds.get(data.guild_id);
+        const guild = this.client.guilds.cache.get(data.guild_id);
         if (!guild) return;
         const player = this.get(data.guild_id);
         if (!player) return;
